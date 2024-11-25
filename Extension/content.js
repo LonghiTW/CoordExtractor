@@ -22,7 +22,12 @@ document.addEventListener('keydown', function(event) {
 				coord.lat = parseFloat(match[2]); // 緯度
 				
 				let text = '';
-				if (true) {
+				
+                // 從 chrome.storage.sync 讀取 ifOffset 的狀態
+                chrome.storage.sync.get('enabled', function(result) {
+                    const ifOffsetChecked = result.enabled || false;  // 預設為 false
+				
+				if (ifOffsetChecked) {
 					let mccoord = BTE_PROJECTION.fromGeo(coord);
 					let offset = { x: mccoord.x - 0.625, y: mccoord.y + 0.3125 };
 					let converted = BTE_PROJECTION.toGeo(offset);
@@ -41,6 +46,7 @@ document.addEventListener('keydown', function(event) {
 					.catch(err => {
                         console.error('Failed to copy coordinates: ', err);
                     });
+				});
 			} else {
 				console.log("Unable to parse coordinates.");
 			}
