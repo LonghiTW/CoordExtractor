@@ -1,0 +1,23 @@
+{
+	"manifest_version": 3,
+	"name": "TWMapService CoordExtractor",
+	"version": "1.0",
+	"description": "A coordinate extraction tool for Taiwan map services.",
+	"permissions": ["activeTab", "scripting", "storage"],
+	"host_permissions": ["*://urban.kinmen.gov.tw/kmgisweb/*"],
+	"action": {
+		"default_popup": "popup.html",
+		"default_icon": "chip_extraction.png"
+	},
+	"icons": {
+		"16": "chip_extraction.png",
+		"48": "chip_extraction.png",
+		"128": "chip_extraction.png"
+	},
+	"content_scripts": [
+		{
+			"matches": ["*://urban.kinmen.gov.tw/kmgisweb/*"],
+			"js": ["content.js"]
+		}
+	]
+}
