@@ -1,16 +1,16 @@
 (async () => {
   document.addEventListener('DOMContentLoaded', async function () {
-    const SwitchStatus = document.getElementById('MainSwitch');
+    const ifOffsetChecked = document.getElementById('ifOffset');
   
     // Get initial status
     const { enabled } = await chrome.storage.sync.get('enabled');
   
     // Set checkbox status
-    SwitchStatus.checked = enabled;
+    ifOffsetChecked.checked = enabled;
   
     // Listen change of checkbox status
-    SwitchStatus.addEventListener('change', async () => {
-      const isChecked = SwitchStatus.checked;
+    ifOffsetChecked.addEventListener('change', async () => {
+      const isChecked = ifOffsetChecked.checked;
   
       // Update status
       await chrome.storage.sync.set({
