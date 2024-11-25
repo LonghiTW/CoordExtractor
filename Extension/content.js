@@ -59,63 +59,6 @@ function toDegrees(radians) {
     return radians * 180 / Math.PI;
 }
 
-// Functions to handle button clicks
-function handleClick_point(pointIndex) {
-    let url = location.href;
-    const { lat, lon, bearing: bearing_temp, pitch: pitch_temp } = parseUrl(url);
-    
-    if (pointIndex === 1) {
-        pitch_1 = pitch_temp;
-        bearing_1 = bearing_temp;
-        display_point1.textContent = `${pitch_1 + 90}`;
-    } else {
-        pitch_2 = pitch_temp;
-        bearing_2 = bearing_temp;
-        display_point2.textContent = `${pitch_2 + 90}`;
-    }
-    estimate(pointIndex);
-}
-
-function handleDoubleClick_point(pointIndex) {
-    if (pointIndex === 1) {
-        console.log('Point 1 double clicked');
-        pitch_1 = null;
-        bearing_1 = null;
-        display_point1.textContent = ``;
-    } else {
-        console.log('Point 2 double clicked');
-        pitch_2 = null;
-        bearing_2 = null;
-        display_point2.textContent = ``;
-    }
-    display_distance.textContent = ``;
-    display_height.textContent = ``;
-    endPoint = { lat: null, lon: null }
-    button_coords.innerText = 'Coordinates';
-    pointIndex = (pointIndex === 1) ? 2 : 1;
-    estimate(pointIndex);
-}
-
-function handleClick_coords() {
-    if (endPoint.lat === null || endPoint.lon === null) {
-        alert('No coordinates to copy!');
-        return;
-    }
-
-    const text = `${endPoint.lat}, ${endPoint.lon}`;
-
-    navigator.clipboard.writeText(text)
-        .then(() => {
-            alert(`Coordinates "${text}" copied to clipboard!`);
-        })
-        .catch(err => {
-            console.error('Failed to copy coordinates: ', err);
-        });
-}
-
-// Add click and double-click handlers
-
-
 // BTE Projection
 // https://github.com/tf2mandeokyi/bte-projection
 const ROOT3 = Math.sqrt(3);
