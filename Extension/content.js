@@ -5,56 +5,105 @@ let coord = { lat: null, lon: null };
 document.addEventListener('keydown', function(event) {
     // 如果是 Alt + C
     if (event.altKey && event.key === 'c') {
-        // 查找包含 WGS84 經緯度的 <a> 標籤
-        const wgs84CoordinatesElement = document.querySelector("#info a:nth-of-type(2)");
-        
-        if (wgs84CoordinatesElement) {
+        // 使用判斷網站的函數來獲取當前網站的元素選擇器和座標解析邏輯
+        const siteInfo = getSiteInfo(window.location.hostname);
+        console.log(window.location.hostname);
+       
+        if (siteInfo && typeof siteInfo.processCoordinates === 'function') {
             // 擷取 WGS84 經緯度文本並顯示
-            const coordinatesText = wgs84CoordinatesElement.textContent.trim();
-			
-			// 使用正則表達式來解析經緯度
-			const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/;
-			const match = coordinatesText.match(regex);
-			
-			if (match) {
-				// 提取經度和緯度，並儲存到 coord 物件
-				coord.lon = parseFloat(match[1]); // 經度
-				coord.lat = parseFloat(match[2]); // 緯度
-				
-				let text = '';
-				
-                // 從 chrome.storage.sync 讀取 ifOffset 的狀態
-                chrome.storage.sync.get('enabled', function(result) {
-                    const ifOffsetChecked = result.enabled || false;  // 預設為 false
-				
-				if (ifOffsetChecked) {
-					let mccoord = BTE_PROJECTION.fromGeo(coord);
-					let offset = { x: mccoord.x - 0.625, y: mccoord.y + 0.3125 };
-					let converted = BTE_PROJECTION.toGeo(offset);
-					text = `${converted.lat}, ${converted.lon}`;
-					console.log("Current Coordinates (WGS84):", `${coord.lat}, ${coord.lon}`);
-					console.log("BTE Taiwan offset:", text);
-				} else {
-				    text = `${coord.lat}, ${coord.lon}`;
-                    console.log("Current Coordinates (WGS84):", text);
-				}
-				
-				navigator.clipboard.writeText(text)
-				    .then(() => {
-						alert(`Coordinates "${text}" copied to clipboard!`);
-					})
-					.catch(err => {
-                        console.error('Failed to copy coordinates: ', err);
-                    });
-				});
-			} else {
-				console.log("Unable to parse coordinates.");
-			}
+            const coordinatesText = getCoordinatesText(siteInfo.selector);
+            
+            // 嘗試解析座標並處理
+            if (coordinatesText) {
+                const parsedCoord = siteInfo.processCoordinates(coordinatesText);
+                if (parsedCoord) {
+                    copyCoordinates(parsedCoord);
+                } else {
+                    console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
+                }
+            } else {
+                console.error(`Coordinates element not found on ${siteInfo.name}.`);
+            }
         } else {
-            console.log("WGS84 Coordinates element not found.");
+            console.error(`No valid processCoordinates function found for ${window.location.hostname}.`);
         }
     }
 });
+
+// 判斷當前網站並返回相關資訊的函數
+function getSiteInfo(hostname) {
+    const sites = {
+        'maps.nlsc.gov.tw': {
+            name: 'Taiwan Map Service',
+            selector: '.ol-mouse-position',
+            processCoordinates: lonlat
+        },
+        'urban.kinmen.gov.tw': {
+            name: 'Kinmen Map Service',
+            selector: '#info a:nth-of-type(2)', // 查找包含 WGS84 經緯度的 <a> 標籤
+            processCoordinates: lonlat
+        },
+    };
+
+    const siteInfo = sites[hostname];
+    if (!siteInfo) {
+        console.error("This website is not supported. Please check the site name.");
+    }
+    return siteInfo || null; // 如果網站不存在於列表中，返回 null
+}
+
+// 根據選擇器獲取座標文本的函數
+function getCoordinatesText(selector) {
+    const element = document.querySelector(selector);
+    return element ? element.textContent.trim() : null;
+}
+
+// 解析經緯座標格式的函數
+function lonlat(coordinatesText) {
+    const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/;
+    const match = coordinatesText.match(regex);
+
+    if (match) {
+        return { lon: parseFloat(match[1]), lat: parseFloat(match[2]) };
+    }
+    return null;
+}
+
+// 處理 BTE Taiwan 偏移並複製座標的邏輯
+function copyCoordinates(coord) {
+    let text = '';
+
+    // 從 chrome.storage.sync 讀取 ifOffset 的狀態
+    chrome.storage.sync.get('enabled', function(result) {
+        const ifOffsetChecked = result.enabled || false;  // 預設為 false
+
+        // 如果勾選了偏移選項，則進行偏移處理
+        if (ifOffsetChecked) {
+            const offsetCoord = applyBTEOffset(coord);
+            text = `${offsetCoord.lat}, ${offsetCoord.lon}`;
+            console.log("BTE Taiwan offset:", text);
+        } else {
+            text = `${coord.lat}, ${coord.lon}`;
+            console.log("Current Coordinates (WGS84):", text);
+        }
+
+        // 將座標複製到剪貼簿
+        navigator.clipboard.writeText(text)
+            .then(() => {
+                alert(`Coordinates "${text}" copied to clipboard!`);
+            })
+            .catch(err => {
+                console.error('Failed to copy coordinates: ', err);
+            });
+    });
+}
+
+// 應用 BTE Taiwan 偏移的邏輯
+function applyBTEOffset(coord) {
+    let mccoord = BTE_PROJECTION.fromGeo(coord);
+    let offset = { x: mccoord.x - 0.625, y: mccoord.y + 0.3125 };
+    return BTE_PROJECTION.toGeo(offset);
+}
 
 // Mathematical calculations
 function toRadians(degrees) {
