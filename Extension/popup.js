@@ -2,21 +2,18 @@
   document.addEventListener('DOMContentLoaded', async function () {
     const ifOffsetChecked = document.getElementById('ifOffset');
   
-    // Get initial status
+    // Get initial status of 'enabled' from storage
     const { enabled } = await chrome.storage.sync.get('enabled');
   
-    // Set checkbox status
+    // Set checkbox to the current status
     ifOffsetChecked.checked = enabled;
   
-    // Listen change of checkbox status
+    // Listen for changes on the checkbox and update 'enabled' in storage
     ifOffsetChecked.addEventListener('change', async () => {
       const isChecked = ifOffsetChecked.checked;
   
-      // Update status
-      await chrome.storage.sync.set({
-        enabled: isChecked,
-        opentab: (await chrome.storage.sync.get('opentab')).opentab,
-      });
+      // Update 'enabled' status in storage
+      await chrome.storage.sync.set({ enabled: isChecked });
     });
   });
 })();
