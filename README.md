@@ -15,5 +15,5 @@
 4. 點擊**載入未封裝項目**按鈕並選擇剛剛解壓縮後檔案所在的目錄。
 5. 完成！開啟圖資平台使用。
 ## 支援平台
-[國土測繪圖資服務雲](https://maps.nlsc.gov.tw/T09/mapshow.action)
-[金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
+* [國土測繪圖資服務雲](https://maps.nlsc.gov.tw/T09/mapshow.action)
+* [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
