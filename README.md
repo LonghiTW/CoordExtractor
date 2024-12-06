@@ -6,10 +6,10 @@
 ### 開發人員工具(功能不全)
 1. 開啟圖資平台。
 2. 開啟開發人員工具(F12)。
-3. 複製[指令](https://github.com/LonghiTW/TWMapService_CoordExtractor/blob/main/commands.js)並在控制台(console)貼上。
+3. 複製[指令](https://github.com/LonghiTW/CoordExtractor/blob/main/commands.js)並在控制台(console)貼上。
 4. 關閉開發人員工具(F12)。
 ### 擴充功能
-1. 下載[ZIP壓縮檔](https://github.com/LonghiTW/TWMapService_CoordExtractor/releases)並解壓縮。
+1. 下載[ZIP壓縮檔](https://github.com/LonghiTW/CoordExtractor/releases)並解壓縮。
 2. 在Google Chrome新分頁輸入網址`chrome://extensions`進入擴充功能介面。
 3. 點擊右上角開關啟用**開發人員模式**。
 4. 點擊**載入未封裝項目**按鈕並選擇剛剛解壓縮後檔案所在的目錄。
