@@ -122,9 +122,16 @@ function copyCoordinates(coord) {
 
 // 應用 BTE Taiwan 偏移的邏輯
 function applyBTEOffset(coord) {
-    let mccoord = BTE_PROJECTION.fromGeo(coord);
-    let offset = { x: mccoord.x - 0.625, y: mccoord.y + 0.3125 };
-    return BTE_PROJECTION.toGeo(offset);
+	// 讀取 chrome.storage.sync 中的 xInput 和 zInput
+	chrome.storage.sync.get(['xInput', 'zInput'], function(result) {
+		const xOffset = result.xInput || 0;
+		const zOffset = result.zInput || 0;
+	    
+		// 使用從 storage 中讀取的偏移數值進行計算
+        let mccoord = BTE_PROJECTION.fromGeo(coord);
+        let offset = { x: mccoord.x + xOffset, y: mccoord.y + zOffset };
+		// 返回經過偏移的座標
+        return BTE_PROJECTION.toGeo(offset);
 }
 
 // Mathematical calculations
