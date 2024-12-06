@@ -91,7 +91,7 @@ function KaohsiungIMAP(coordinatesText) {
     return null;
 }
 
-// 處理 BTE Taiwan 偏移並複製座標的邏輯
+// 處理座標偏移並複製座標的邏輯
 function copyCoordinates(coord) {
     let text = '';
 
@@ -120,7 +120,7 @@ function copyCoordinates(coord) {
     });
 }
 
-// 應用 BTE Taiwan 偏移的邏輯
+// 應用 BTE 偏移的邏輯
 function applyBTEOffset(coord) {
 	// 讀取 chrome.storage.sync 中的 xInput 和 zInput
 	chrome.storage.sync.get(['xInput', 'zInput'], function(result) {
