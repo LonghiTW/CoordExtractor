@@ -6,6 +6,7 @@
 	"permissions": ["activeTab", "scripting", "storage"],
 	"host_permissions": [
 	    "*://maps.nlsc.gov.tw/*", // 國土測繪圖資服務雲
+		"*://gisdawh.kcg.gov.tw/*", // 高雄地圖網
 	    "*://urban.kinmen.gov.tw/kmgisweb/*" // 金門縣圖資雲系統
 	],
 	"action": {
@@ -21,6 +22,7 @@
 		{
 			"matches": [
 			    "*://maps.nlsc.gov.tw/*", // 國土測繪圖資服務雲
+				"*://gisdawh.kcg.gov.tw/*", // 高雄地圖網
 			    "*://urban.kinmen.gov.tw/kmgisweb/*" // 金門縣圖資雲系統
 			],
 			"js": ["content.js"]
