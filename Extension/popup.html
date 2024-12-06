@@ -4,29 +4,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- https://bootstrap5.hexschool.com/docs/5.0/getting-started/introduction/ -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+  <link rel="stylesheet" href="styles.css">
   <title>CoordExtractor</title>
-  <style>
-    body {
-      width: 400px;
-      height: 200px;
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-  </style>
 </head>
 
 <body>
   <h4>CoordExtractor</h4>
   <p>A coordinate extraction tool for map services.</p>
-  <p><a href="https://github.com/LonghiTW/CoordExtractor" target="_blank">Source Code on GitHub</a>
-  </p>
+  <p><a href="https://github.com/LonghiTW/CoordExtractor" target="_blank">Source Code on GitHub</a></p>
+
+  <!-- Offset setting -->
+  <div class="mb-3 row">
+    <div class="col-2 text-end">
+      <label for="offset" class="form-label">Offset:</label>
+    </div>
+    <div class="col-10">
+      <select class="form-select" id="offset" aria-label="Offset selection">
+        <option value="none" selected>None</option>
+        <option value="latlon">Lat&Lon</option>
+        <option value="btexz">BTE X&Z</option>
+      </select>
+    </div>
   </div>
-  <div class="form-check form-switch">
-    <input class="form-check-input" type="checkbox" id="ifOffset" checked>
-    <label class="form-check-label" for="ifOffset">BTE Taiwan offset</label>
+
+  <!-- From input (for Lat&Lon) -->
+  <div id="fromInput" class="mb-3 row">
+    <div class="col-2 text-end">
+      <label for="fromOffset" class="form-label">From:</label>
+    </div>
+    <div class="col-10">
+      <input type="text" class="form-control" id="fromOffset" placeholder="Latitude, Longitude" />
+    </div>
   </div>
+
+  <!-- To input (for Lat&Lon) -->
+  <div id="toInput" class="mb-3 row">
+    <div class="col-2 text-end">
+      <label for="toOffset" class="form-label">To:</label>
+    </div>
+    <div class="col-10">
+      <input type="text" class="form-control" id="toOffset" placeholder="Latitude, Longitude" />
+    </div>
+  </div>
+
+  <!-- X input (for BTE X&Z) -->
+  <div id="xInput" class="mb-3 row">
+    <div class="col-2 text-end">
+      <label for="xOffset" class="form-label">X:</label>
+    </div>
+    <div class="col-10">
+      <input type="number" class="form-control" id="xOffset" placeholder="Enter X value" step="0.0125" />
+    </div>
+  </div>
+
+  <!-- Z input (for BTE X&Z) -->
+  <div id="zInput" class="mb-3 row">
+    <div class="col-2 text-end">
+      <label for="zOffset" class="form-label">Z:</label>
+    </div>
+    <div class="col-10">
+      <input type="number" class="form-control" id="zOffset" placeholder="Enter Z value" step="0.0125" />
+    </div>
+  </div>
+
   <script src="/popup.js"></script>
 </body>
 
