@@ -1,5 +1,5 @@
-# TWMapService_CoordExtractor
-臺灣圖資平台用的網頁擴充功能，使用快捷鍵複製經緯座標。
+# CoordExtractor
+圖資平台用的Google網頁擴充功能，使用快捷鍵複製經緯座標。
 ## 快捷鍵
 `Alt` + `c`
 ## 使用方式
@@ -16,4 +16,5 @@
 5. 完成！開啟圖資平台使用。
 ## 支援平台
 * [國土測繪圖資服務雲](https://maps.nlsc.gov.tw/T09/mapshow.action)
+* [高雄地圖網](https://gisdawh.kcg.gov.tw/)
 * [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
