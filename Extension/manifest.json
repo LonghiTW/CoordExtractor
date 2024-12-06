@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "TWMapService CoordExtractor",
+	"name": "CoordExtractor",
 	"version": "1.1",
-	"description": "A coordinate extraction tool for Taiwan map services.",
+	"description": "A coordinate extraction tool for map services.",
 	"permissions": ["activeTab", "scripting", "storage"],
 	"host_permissions": [
 	    "*://maps.nlsc.gov.tw/*", // 國土測繪圖資服務雲
