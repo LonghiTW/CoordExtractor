@@ -14,13 +14,20 @@
 
 		const body = document.body;
 		console.log(await chrome.storage.sync.get());
-		xOffset.value = (await chrome.storage.sync.get('xInput')).xInput || 0;
-		zOffset.value = (await chrome.storage.sync.get('zInput')).zInput || 0;
+		xOffset.value = (await chrome.storage.sync.get('xInput')).xInput || '';
+		zOffset.value = (await chrome.storage.sync.get('zInput')).zInput || '';
 		offsetSelect.value =
 			(await chrome.storage.sync.get('offset')).offset || 'none';
-		fromOffset.value =
-			(await chrome.storage.sync.get('fromInput')).fromInput || 0;
-		toOffset.value = (await chrome.storage.sync.get('toInput')).toInput || 0;
+		const fromInputTemp =
+			(await chrome.storage.sync.get('fromInput')).fromInput || '';
+		fromOffset.value = Array.isArray(fromInputTemp)
+			? fromInputTemp.join(',')
+			: fromInputTemp;
+		const toInputTemp =
+			(await chrome.storage.sync.get('toInput')).toInput || '';
+		toOffset.value = Array.isArray(toInputTemp)
+			? toInputTemp.join(',')
+			: toInputTemp;
 
 		// Function to toggle the visibility of From and To inputs
 		function toggleInputs() {
@@ -85,7 +92,7 @@
 		fromOffset.addEventListener('input', async function (e) {
 			chrome.storage.sync.set(
 				Object.assign(await chrome.storage.sync.get(), {
-					fromInput: Number(e.target.value),
+					fromInput: e.target.value.split(',').map(Number),
 				}),
 			);
 		});
@@ -93,7 +100,7 @@
 		toOffset.addEventListener('input', async function (e) {
 			chrome.storage.sync.set(
 				Object.assign(await chrome.storage.sync.get(), {
-					toInput: Number(e.target.value),
+					toInput: e.target.value.split(',').map(Number),
 				}),
 			);
 		});
