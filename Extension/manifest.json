@@ -5,9 +5,9 @@
 	"description": "A coordinate extraction tool for map services.",
 	"permissions": ["activeTab", "scripting", "storage"],
 	"host_permissions": [
-	    "*://maps.nlsc.gov.tw/*", // 國土測繪圖資服務雲
-		"*://gisdawh.kcg.gov.tw/*", // 高雄地圖網
-	    "*://urban.kinmen.gov.tw/kmgisweb/*" // 金門縣圖資雲系統
+		"*://maps.nlsc.gov.tw/*",
+		"*://gisdawh.kcg.gov.tw/*",
+		"*://urban.kinmen.gov.tw/kmgisweb/*"
 	],
 	"action": {
 		"default_popup": "popup.html",
@@ -21,11 +21,11 @@
 	"content_scripts": [
 		{
 			"matches": [
-			    "*://maps.nlsc.gov.tw/*", // 國土測繪圖資服務雲
-				"*://gisdawh.kcg.gov.tw/*", // 高雄地圖網
-			    "*://urban.kinmen.gov.tw/kmgisweb/*" // 金門縣圖資雲系統
+				"*://maps.nlsc.gov.tw/*",
+				"*://gisdawh.kcg.gov.tw/*",
+				"*://urban.kinmen.gov.tw/kmgisweb/*"
 			],
-			"js": ["content.js"]
+			"js": ["./content.js"]
 		}
 	]
 }
