@@ -21,13 +21,17 @@
 		const fromInputTemp =
 			(await chrome.storage.sync.get('fromInput')).fromInput || '';
 		fromOffset.value = Array.isArray(fromInputTemp)
-			? fromInputTemp.join(',')
-			: fromInputTemp;
+			? fromInputTemp.length === 2
+				? fromInputTemp.join(',')
+				: ''
+			: '';
 		const toInputTemp =
 			(await chrome.storage.sync.get('toInput')).toInput || '';
 		toOffset.value = Array.isArray(toInputTemp)
-			? toInputTemp.join(',')
-			: toInputTemp;
+			? toInputTemp.length === 2
+				? toInputTemp.join(',')
+				: ''
+			: '';
 
 		// Function to toggle the visibility of From and To inputs
 		function toggleInputs() {
