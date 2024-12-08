@@ -112,7 +112,11 @@ function copyCoordinates(coord) {
         	console.log('Offset:', offsetValue);
 
         	// 如果勾選了偏移選項，則進行偏移處理
-        	if (offsetValue === 'btexz') {
+        	if (offsetValue === 'latlon') {
+                	const offsetCoord = await applylatlonOffset(coord);
+                	text = `${offsetCoord.lat}, ${offsetCoord.lon}`;
+                	console.log('Lat&Lon offset:', text);
+        	} else if (offsetValue === 'btexz') {
                 	const offsetCoord = await applyBTEOffset(coord);
                 	text = `${offsetCoord.lat}, ${offsetCoord.lon}`;
                 	console.log('BTE Taiwan offset:', text);
@@ -133,6 +137,18 @@ function copyCoordinates(coord) {
 	});
 }
 
+// 應用 Lat&Lon 偏移的邏輯
+function applylatlonOffset(coord) {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(['fromInput', 'toInput'], function (result) {
+            const fromOffset = result.fromInput || {};
+            const toOffset = result.toInput || {};
+
+            let offset = { lat: coord.lat - fromOffset[0] + toOffset[0], lon: coord.lon - fromOffset[1] + toOffset[1] };
+            resolve(offset); // 非同步完成後將結果傳回
+        });
+    });
+}
 
 // 應用 BTE 偏移的邏輯
 function applyBTEOffset(coord) {
