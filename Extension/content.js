@@ -2,7 +2,7 @@ console.log('Content script loaded!');
 (async () => {
 	const test = await chrome.storage.sync.get();
 	console.log(test);
-})();
+
 
 // 定義 coord 物件，初始化 lat 和 lon 為 null
 let coord = { lat: null, lon: null };
@@ -106,45 +106,46 @@ function KaohsiungIMAP(coordinatesText) {
 function copyCoordinates(coord) {
 	let text = '';
 
-	// 從 chrome.storage.sync 讀取 ifOffset 的狀態
-	chrome.storage.sync.get('enabled', function (result) {
-		const ifOffsetChecked = result.enabled || false; // 預設為 false
+	// 從 chrome.storage.sync 讀取 offset 的狀態
+	chrome.storage.sync.get('offset', async function (result) {
+		const offsetValue = result.offset || 'none'; // 預設為 'none'
+        	console.log('Offset:', offsetValue);
 
-		// 如果勾選了偏移選項，則進行偏移處理
-		if (ifOffsetChecked) {
-			const offsetCoord = applyBTEOffset(coord);
-			text = `${offsetCoord.lat}, ${offsetCoord.lon}`;
-			console.log('BTE Taiwan offset:', text);
-		} else {
-			text = `${coord.lat}, ${coord.lon}`;
-			console.log('Current Coordinates (WGS84):', text);
-		}
+        	// 如果勾選了偏移選項，則進行偏移處理
+        	if (offsetValue === 'btexz') {
+                	const offsetCoord = await applyBTEOffset(coord);
+                	text = `${offsetCoord.lat}, ${offsetCoord.lon}`;
+                	console.log('BTE Taiwan offset:', text);
+        	} else {
+            		text = `${coord.lat}, ${coord.lon}`;
+            		console.log('Current Coordinates (WGS84):', text);
+        	}
 
-		// 將座標複製到剪貼簿
-		navigator.clipboard
-			.writeText(text)
-			.then(() => {
-				alert(`Coordinates "${text}" copied to clipboard!`);
-			})
-			.catch((err) => {
-				console.error('Failed to copy coordinates: ', err);
-			});
+        	// 將座標複製到剪貼簿
+        	navigator.clipboard
+        		.writeText(text)
+          		.then(() => {
+          			alert(`Coordinates "${text}" copied to clipboard!`);
+         		})
+            		.catch((err) => {
+                		console.error('Failed to copy coordinates: ', err);
+            		});
 	});
 }
 
+
 // 應用 BTE 偏移的邏輯
 function applyBTEOffset(coord) {
-	// 讀取 chrome.storage.sync 中的 xInput 和 zInput
-	chrome.storage.sync.get(['xInput', 'zInput'], function (result) {
-		const xOffset = result.xInput || 0;
-		const zOffset = result.zInput || 0;
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(['xInput', 'zInput'], function (result) {
+            const xOffset = result.xInput || 0;
+            const zOffset = result.zInput || 0;
 
-		// 使用從 storage 中讀取的偏移數值進行計算
-		let mccoord = BTE_PROJECTION.fromGeo(coord);
-		let offset = { x: mccoord.x + xOffset, y: mccoord.y + zOffset };
-		// 返回經過偏移的座標
-		return BTE_PROJECTION.toGeo(offset);
-	});
+            let mccoord = BTE_PROJECTION.fromGeo(coord);
+            let offset = { x: mccoord.x + xOffset, y: mccoord.y + zOffset };
+            resolve(BTE_PROJECTION.toGeo(offset)); // 非同步完成後將結果傳回
+        });
+    });
 }
 
 // Mathematical calculations
@@ -1007,3 +1008,5 @@ BTE_PROJECTION = fromProjectionJSON({
 		y: 7318261.522857145,
 	},
 });
+
+})();
