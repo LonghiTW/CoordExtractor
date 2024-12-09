@@ -3,7 +3,6 @@ console.log('Content script loaded!');
 	const test = await chrome.storage.sync.get();
 	console.log(test);
 
-
 // 定義 coord 物件，初始化 lat 和 lon 為 null
 let coord = { lat: null, lon: null };
 
@@ -38,9 +37,49 @@ document.addEventListener('keydown', function (event) {
 	}
 });
 
+// 攔截 Google Maps 的複製行為
+// 偵測元素是否出現
+const detectElement = () => {
+	if (window.location.hostname === 'www.google.com') {
+		const siteInfo = getSiteInfo(window.location.hostname);
+		const element = document.querySelector(siteInfo.selector);
+		if (element) {
+    		// 如果找到了元素，執行 clipboard 操作
+    		console.log('Element found, reading clipboard...');
+    		navigator.clipboard.readText()
+      			.then(text => {
+					const parsedCoord = siteInfo.processCoordinates(text);
+        			console.log('Clipboard text:', parsedCoord);
+					if (parsedCoord) {
+						copyCoordinates(parsedCoord);
+					} else {
+						console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
+					}
+      			})
+      			.catch(err => {
+        			console.error('Failed to read clipboard contents: ', err);
+      			});
+  		}
+	}
+};
+
+// 使用 MutationObserver 監聽 DOM 變化
+const observer = new MutationObserver(detectElement);
+
+// 設定 MutationObserver 監聽條件，偵測 DOM 樹變化
+observer.observe(document.body, {
+  childList: true,  // 監聽子節點的新增或刪除
+  subtree: true     // 監聽整個 DOM 樹的變化
+});
+
 // 判斷當前網站並返回相關資訊的函數
 function getSiteInfo(hostname) {
 	const sites = {
+		'www.google.com': {
+			name: 'Google Maps',
+			selector: '.hdeJwf.ymw5uf.Hk4XGb.TEYSPe',
+			processCoordinates: latlon,
+		},
 		'maps.nlsc.gov.tw': {
 			name: 'Taiwan Map Service',
 			selector: '.ol-mouse-position',
@@ -79,6 +118,16 @@ function lonlat(coordinatesText) {
 
 	if (match) {
 		return { lon: parseFloat(match[1]), lat: parseFloat(match[2]) };
+	}
+	return null;
+}
+
+function latlon(coordinatesText) {
+	const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/;
+	const match = coordinatesText.match(regex);
+
+	if (match) {
+		return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
 	}
 	return null;
 }
@@ -126,14 +175,13 @@ function copyCoordinates(coord) {
         	}
 
         	// 將座標複製到剪貼簿
-        	navigator.clipboard
-        		.writeText(text)
+        	navigator.clipboard.writeText(text)
           		.then(() => {
           			alert(`Coordinates "${text}" copied to clipboard!`);
          		})
-            		.catch((err) => {
-                		console.error('Failed to copy coordinates: ', err);
-            		});
+            	.catch((err) => {
+                	console.error('Failed to copy coordinates: ', err);
+            	});
 	});
 }
 
@@ -141,8 +189,12 @@ function copyCoordinates(coord) {
 function applylatlonOffset(coord) {
     return new Promise((resolve) => {
         chrome.storage.sync.get(['fromInput', 'toInput'], function (result) {
-            const fromOffset = result.fromInput || {};
-            const toOffset = result.toInput || {};
+            const fromOffset = (result.fromInput.length === 1)
+			    ? [0, 0]
+				: result.fromInput;
+            const toOffset = (result.toInput.length === 1)
+			    ? [0, 0]
+			    : result.toInput;
 
             let offset = { lat: coord.lat - fromOffset[0] + toOffset[0], lon: coord.lon - fromOffset[1] + toOffset[1] };
             resolve(offset); // 非同步完成後將結果傳回
