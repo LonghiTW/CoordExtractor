@@ -156,18 +156,19 @@ function latlon(coordinatesText) {
 
 // 解析高雄市政府 I-MAP 座標格式的函數
 function KaohsiungIMAP(coordinatesText) {
+	const regex = /X:(-?\d+\.\d+)\s*Y:(-?\d+\.\d+)/;
+	const match = coordinatesText.match(regex);
+	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+	// 檢查文本是否包含 "97二度121分帶"
+	if (coordinatesText.includes('97AUTO:121分帶') || coordinatesText.includes('97二度121')) {
+		return TWD97toWGS84(coordText);
 	// 檢查文本是否包含 "WGS84經緯度"
-	if (coordinatesText.includes('WGS84經緯度')) {
-		// 使用正則表達式解析 WGS84 經緯度
-		const regex = /X:(-?\d+\.\d+)\s*Y:(-?\d+\.\d+)/;
-		const match = coordinatesText.match(regex);
-
-		if (match) {
-			return { lon: parseFloat(match[1]), lat: parseFloat(match[2]) };
-		}
+	} else if (coordinatesText.includes('WGS84經緯度')) {
+		return { lon: coordText.x, lat: coordText.y };
+	// 不支援的格式
 	} else {
 		alert(
-			'The selected coordinates are not in WGS84 format. Please change the settings in the lower left corner.',
+			'The selected coordinates format are not supported. Please change the settings in the lower left corner.',
 		);
 	}
 	return null;
@@ -248,6 +249,13 @@ function toDegrees(radians) {
 }
 
 // TWD97 UTM to WGS84 Latitude and Longitude
+	/**
+	 * CONVERTING UTM TO LATITUDE AND LONGITUDE (OR VICE VERSA)
+	 * https://fypandroid.wordpress.com/2011/09/03/converting-utm-to-latitude-and-longitude-or-vice-versa/
+	 *
+	 * 測繪資訊成果供應管理系統(原內政部地政司衛星測量中心)
+	 * https://gps.moi.gov.tw/sscenter/introduce/IntroducePage.aspx?Page=GPS9
+	 */
 function TWD97toWGS84(coord97) {
 	// Symbols
 	let easting = coord97.x;
@@ -264,7 +272,7 @@ function TWD97toWGS84(coord97) {
 	// Calculate the Meridional Arc
 	let Meridional_Arc = northing / k0;
 	// Calculate Footprint Latitude
-    let mu = Meridional_Arc / Equatorial_Radius / (1 - e_2 / 4 - 3 * e_4 / 64 - 5 * e_6 / 256);
+	let mu = Meridional_Arc / Equatorial_Radius / (1 - e_2 / 4 - 3 * e_4 / 64 - 5 * e_6 / 256);
 	let e1 = Flattening / (2 - Flattening);
 	let e1_2 = e1 * e1;
 	let e1_3 = e1 * e1 * e1;
