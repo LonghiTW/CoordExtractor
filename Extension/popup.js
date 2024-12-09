@@ -108,6 +108,33 @@
 				}),
 			);
 		});
+		
+		// Function to clear the input field
+		async function clearInputField(inputElement, storageKey) {
+			inputElement.value = ''; // Clear the input value
+			// Save the cleared value to storage
+			await chrome.storage.sync.set({
+				[storageKey]: null, // Use `null` to signify that it's cleared
+			});
+		}
+		
+		// Add event listeners to the clear buttons for each input field
+		async function addClearButtonListeners() {
+			const clearButtons = document.querySelectorAll('.clear-btn');
+			clearButtons.forEach(button => {
+				button.addEventListener('click', async (event) => {
+					const inputId = event.target.getAttribute('data-clear');
+					const inputField = document.getElementById(inputId);
+					if (inputField) {
+						// Call clearInputField and pass the correct storage key
+						await clearInputField(inputField, inputId.replace('Input', '') + 'Input');
+					}
+				});
+			});
+		}
+		
+		// Initialize the clear button functionality
+		await addClearButtonListeners();
 
 		// Initial call to set the state based on the default selection
 		toggleInputs();
