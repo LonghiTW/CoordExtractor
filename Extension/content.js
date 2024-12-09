@@ -37,39 +37,63 @@ document.addEventListener('keydown', function (event) {
 	}
 });
 
+// 用來追蹤元素的偵測狀態
+let elementDetected = false;
+
 // 攔截 Google Maps 的複製行為
-// 偵測元素是否出現
 const detectElement = () => {
 	if (window.location.hostname === 'www.google.com') {
 		const siteInfo = getSiteInfo(window.location.hostname);
 		const element = document.querySelector(siteInfo.selector);
-		if (element) {
-    		// 如果找到了元素，執行 clipboard 操作
-    		console.log('Element found, reading clipboard...');
-    		navigator.clipboard.readText()
-      			.then(text => {
+
+		// 如果元素存在並且之前未偵測過，則執行後續程式
+		if (element && !elementDetected) {
+			elementDetected = true;  // 標記已經偵測過
+
+			// 如果找到了元素，執行 clipboard 操作
+			console.log('Element found, reading clipboard...');
+			navigator.clipboard.readText()
+				.then(text => {
 					const parsedCoord = siteInfo.processCoordinates(text);
-        			console.log('Clipboard text:', parsedCoord);
+					console.log('Clipboard text:', parsedCoord);
 					if (parsedCoord) {
 						copyCoordinates(parsedCoord);
 					} else {
 						console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
 					}
-      			})
-      			.catch(err => {
-        			console.error('Failed to read clipboard contents: ', err);
-      			});
-  		}
+				})
+				.catch(err => {
+					console.error('Failed to read clipboard contents: ', err);
+				});
+		}
 	}
 };
 
 // 使用 MutationObserver 監聽 DOM 變化
-const observer = new MutationObserver(detectElement);
+const observer = new MutationObserver((mutationsList, observer) => {
+	// 檢查該元素是否還在頁面中
+	const siteInfo = getSiteInfo(window.location.hostname);
+	const element = document.querySelector(siteInfo.selector);
+
+	// 呼叫 detectElement 進行偵測
+	detectElement();
+});
 
 // 設定 MutationObserver 監聽條件，偵測 DOM 樹變化
 observer.observe(document.body, {
-  childList: true,  // 監聽子節點的新增或刪除
-  subtree: true     // 監聽整個 DOM 樹的變化
+	childList: true,  // 監聽子節點的新增或刪除
+	subtree: true     // 監聽整個 DOM 樹的變化
+});
+
+// 監聽滑鼠按鈕釋放事件來重置 elementDetected
+document.addEventListener('mouseup', (event) => {
+	console.log('mouseup event triggered');  // 確認事件觸發
+	console.log('Button pressed:', event.button);  // 顯示按下的按鈕
+	// 檢查是否是右鍵（button === 2 表示右鍵）
+	if (event.button === 0) {
+		console.log('Right-click detected (mouseup). Resetting detection flag.');
+		elementDetected = false;  // 右鍵點擊時重置標誌
+	}
 });
 
 // 判斷當前網站並返回相關資訊的函數
@@ -162,7 +186,7 @@ function copyCoordinates(coord) {
 
         	// 如果勾選了偏移選項，則進行偏移處理
         	if (offsetValue === 'latlon') {
-                	const offsetCoord = await applylatlonOffset(coord);
+                	const offsetCoord = await applyLatLonOffset(coord);
                 	text = `${offsetCoord.lat}, ${offsetCoord.lon}`;
                 	console.log('Lat&Lon offset:', text);
         	} else if (offsetValue === 'btexz') {
@@ -186,7 +210,7 @@ function copyCoordinates(coord) {
 }
 
 // 應用 Lat&Lon 偏移的邏輯
-function applylatlonOffset(coord) {
+function applyLatLonOffset(coord) {
     return new Promise((resolve) => {
         chrome.storage.sync.get(['fromInput', 'toInput'], function (result) {
             const fromOffset = (result.fromInput.length === 1)
