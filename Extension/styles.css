@@ -1,5 +1,3 @@
-/* popup.html */
-
 /* General Body Settings */
 body {
   width: 370px;
@@ -54,4 +52,24 @@ body {
   display: flex;
   justify-content: flex-end; /* Ensure label is right aligned */
   align-items: center;
+}
+
+/* Input container for clear button positioning */
+.input-container {
+  position: relative;
+}
+
+/* Clear button style */
+.clear-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  cursor: pointer;
+}
+
+/* Show the clear button on hover */
+.input-container:hover .clear-btn {
+  display: inline-block;
 }
