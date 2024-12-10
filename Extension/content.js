@@ -1,7 +1,5 @@
 console.log('Content script loaded!');
 (async () => {
-	const test = await chrome.storage.sync.get();
-	console.log(test);
 
 // 定義 coord 物件，初始化座標為 null
 let coord = { lat: null, lon: null }; // WGS84
@@ -127,7 +125,7 @@ function getSiteInfo(hostname) {
 			processCoordinates: gismap,
 		},
 		'gisdawh.kcg.gov.tw': {
-			name: function () {
+			name: (function () {
 				const path = window.location.pathname;
 				if (path.includes('kcmap')) {
 					// 高雄地圖網
@@ -136,8 +134,8 @@ function getSiteInfo(hostname) {
 					// 高雄地籍圖資服務網
 					return 'Kaohsiung LandEasy';
 				}
-			},
-			selector: function () {
+			})(),
+			selector: (function () {
 				const path = window.location.pathname;
 				if (path.includes('kcmap')) {
 					// 高雄地圖網
@@ -147,22 +145,42 @@ function getSiteInfo(hostname) {
 					return '#mouseInfo';
 				}
 				return null;  // 如果沒有匹配的頁面，返回 null
-			},	
-			processCoordinates: function () {
+			})(),	
+			processCoordinates: (function () {
 				const path = window.location.pathname;
 				if (path.includes('kcmap')) {
 					// 高雄地圖網
 					return gismap;
 				} else if (path.includes('landeasy')) {
 					// 高雄地籍圖資服務網
-					return lonlat;
+					return landeasy;
 				}
-			},
+			})(),
 		},
 		'urbangis.kcg.gov.tw': {
 			name: 'Kaohsiung Urban Planning MAP',
 			selector: '#txtX, #txtY',
 			processCoordinates: TWD97XY,
+		},
+		'urbangis.hccg.gov.tw': {
+			name: 'Hsinchu Urban Planning MAP',
+			selector: 'small[data-v-79d61da6]',
+			processCoordinates: urplanning,
+		},
+		'nsp.tcd.gov.tw': {
+			name: 'Pingtung GIS MAP',
+			selector: '#info',
+			processCoordinates: pingtunggis,
+		},
+		'map.taitung.gov.tw': {
+			name: 'Taitung Map',
+			selector: 'td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable',
+			processCoordinates: gismap,
+		},
+		'upgis.klcg.gov.tw': {
+			name: 'Keelung Urban Planning GIS',
+			selector: '#coordShow',
+			processCoordinates: keelunggis,
 		},
 		'urban.kinmen.gov.tw': {
 			name: 'Kinmen Map Service',
@@ -186,7 +204,9 @@ function getCoordinatesText(selector) {
     // 如果找到元素
     if (elements.length > 0) {
         // 如果只有一個元素，返回該元素的文本內容
-        if (elements.length === 1) {
+        if (window.location.hostname === 'urbangis.hccg.gov.tw') {
+            return elements[1].textContent.trim();
+        } else if (elements.length === 1) {
             return elements[0].textContent.trim();
         } else {
             // 如果有多個元素，返回每個元素的文本內容組成的數組
@@ -232,7 +252,7 @@ function yushanCoordinates(coordinatesText) {
 	return null;
 }
 
-// 解析 TWD97 座標格式的函數
+// 解析 TWD97 XY 座標獨立格式的函數
 function TWD97XY(coordinatesText) {
 	const coordText = { x: parseFloat(coordinatesText[0]), y: parseFloat(coordinatesText[1]) };
 
@@ -243,9 +263,48 @@ function TWD97XY(coordinatesText) {
 	return null;
 }
 
+// 解析高雄地籍圖資服務網座標格式的函數
+function landeasy(coordinatesText) {
+	const regex = /\((\d+\.\d+)\s*,\s*(\d+\.\d+)\)/;
+	const match = coordinatesText.match(regex);
+	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+
+	if (coordText) {
+		// 提取 X97 和 Y97 座標
+		return TWD97toWGS84(coordText);
+	}
+	return null;
+}
+
 // 解析城鄉資訊相關平台座標格式的函數
 function urplanning(coordinatesText) {
-	const regex = /X97:\s*(-?\d+\.\d+),\s*Y97:\s*(-?\d+\.\d+)/;
+	const regex = /X97[:\s]*(-?\d+\.\d+)[,\s]+Y97[:\s]*(-?\d+\.\d+)/;
+	const match = coordinatesText.match(regex);
+	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+
+	if (coordText) {
+		// 提取 X97 和 Y97 座標
+		return TWD97toWGS84(coordText);
+	}
+	return null;
+}
+
+// 解析屏東縣地理圖資整合系統座標格式的函數
+function pingtunggis(coordinatesText) {
+	const regex = /TWD97[:\s]*(-?\d+\.\d+),\s*(-?\d+\.\d+)/;
+	const match = coordinatesText.match(regex);
+	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+
+	if (coordText) {
+		// 提取 X97 和 Y97 座標
+		return TWD97toWGS84(coordText);
+	}
+	return null;
+}
+
+// 解析基隆市都市計畫書圖查詢座標格式的函數
+function keelunggis(coordinatesText) {
+	const regex = /\(TWD97\)[\s]*(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/;
 	const match = coordinatesText.match(regex);
 	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
 
