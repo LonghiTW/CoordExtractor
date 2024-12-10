@@ -5,7 +5,7 @@
 	"description": "A coordinate extraction tool for map services.",
 	"permissions": ["activeTab", "scripting", "storage", "clipboardRead", "clipboardWrite"],
 	"host_permissions": [
-	    "*://*.google.com/*",
+		"*://*.google.com/*",
 		"*://maps.nlsc.gov.tw/*",
 		"*://gis.ardswc.gov.tw/*",
 		"*://ysnp.3dgis.tw/*",
@@ -15,6 +15,10 @@
 		"*://gismap.taichung.gov.tw/*",
 		"*://gisdawh.kcg.gov.tw/*",
 		"*://urbangis.kcg.gov.tw/*",
+		"*://urbangis.hccg.gov.tw/*",
+		"*://nsp.tcd.gov.tw/*",
+		"*://map.taitung.gov.tw/*",
+		"*://upgis.klcg.gov.tw/*",
 		"*://urban.kinmen.gov.tw/kmgisweb/*"
 	],
 	"action": {
@@ -29,7 +33,7 @@
 	"content_scripts": [
 		{
 			"matches": [
-			    "*://*.google.com/maps/*",
+				"*://*.google.com/maps/*",
 				"*://maps.nlsc.gov.tw/*",
 				"*://gis.ardswc.gov.tw/*",
 				"*://ysnp.3dgis.tw/*",
@@ -39,6 +43,10 @@
 				"*://gismap.taichung.gov.tw/*",
 				"*://gisdawh.kcg.gov.tw/*",
 				"*://urbangis.kcg.gov.tw/*",
+				"*://urbangis.hccg.gov.tw/*",
+				"*://nsp.tcd.gov.tw/*",
+				"*://map.taitung.gov.tw/*",
+				"*://upgis.klcg.gov.tw/*",
 				"*://urban.kinmen.gov.tw/kmgisweb/*"
 			],
 			"js": ["./content.js"]
