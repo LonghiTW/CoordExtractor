@@ -1,142 +1,116 @@
 (async () => {
-	document.addEventListener('DOMContentLoaded', async function () {
-		const offsetSelect = document.getElementById('offset');
+    document.addEventListener('DOMContentLoaded', async function () {
+        const offsetSelect = document.getElementById('offset');
+        const fromInput = document.getElementById('fromInput');
+        const toInput = document.getElementById('toInput');
+        const xInput = document.getElementById('xInput');
+        const zInput = document.getElementById('zInput');
+        let fromOffset = document.getElementById('fromOffset');
+        let toOffset = document.getElementById('toOffset');
+        let xOffset = document.getElementById('xOffset');
+        let zOffset = document.getElementById('zOffset');
+        const body = document.body;
 
-		const fromInput = document.getElementById('fromInput');
-		const toInput = document.getElementById('toInput');
-		const xInput = document.getElementById('xInput');
-		const zInput = document.getElementById('zInput');
+        // 載入並設定儲存的資料
+        async function loadStoredData() {
+            const storageData = await chrome.storage.sync.get([
+                'xInput', 'zInput', 'offset', 'fromInput', 'toInput'
+            ]);
 
-		let fromOffset = document.getElementById('fromOffset');
-		let toOffset = document.getElementById('toOffset');
-		let xOffset = document.getElementById('xOffset');
-		let zOffset = document.getElementById('zOffset');
+            // 設定頁面顯示的初始值
+            xOffset.value = storageData.xInput || '';
+            zOffset.value = storageData.zInput || '';
+            offsetSelect.value = storageData.offset || 'none';
 
-		const body = document.body;
-		console.log(await chrome.storage.sync.get());
-		xOffset.value = (await chrome.storage.sync.get('xInput')).xInput || '';
-		zOffset.value = (await chrome.storage.sync.get('zInput')).zInput || '';
-		offsetSelect.value =
-			(await chrome.storage.sync.get('offset')).offset || 'none';
-		const fromInputTemp =
-			(await chrome.storage.sync.get('fromInput')).fromInput || '';
-		fromOffset.value = Array.isArray(fromInputTemp)
-			? fromInputTemp.length === 2
-				? fromInputTemp.join(',')
-				: ''
-			: '';
-		const toInputTemp =
-			(await chrome.storage.sync.get('toInput')).toInput || '';
-		toOffset.value = Array.isArray(toInputTemp)
-			? toInputTemp.length === 2
-				? toInputTemp.join(',')
-				: ''
-			: '';
+            const fromInputTemp = storageData.fromInput || '';
+            fromOffset.value = Array.isArray(fromInputTemp) ? fromInputTemp.join(',') : '';
 
-		// Function to toggle the visibility of From and To inputs
-		function toggleInputs() {
-			const offsetValue = offsetSelect.value;
-			if (offsetSelect.value === 'none') {
-				fromInput.style.display = 'none';
-				toInput.style.display = 'none';
-				xInput.style.display = 'none';
-				zInput.style.display = 'none';
-				body.style.height = '190px'; // Set body height when inputs are hidden
-			} else if (offsetValue === 'latlon') {
-				fromInput.style.display = 'flex';
-				toInput.style.display = 'flex';
-				xInput.style.display = 'none';
-				zInput.style.display = 'none';
-				body.style.height = '300px'; // Adjust body height when inputs are shown
-			} else if (offsetValue === 'btexz') {
-				fromInput.style.display = 'none';
-				toInput.style.display = 'none';
-				xInput.style.display = 'flex';
-				zInput.style.display = 'flex';
-				body.style.height = '300px'; // Adjust body height when inputs are shown
-			}
-		}
+            const toInputTemp = storageData.toInput || '';
+            toOffset.value = Array.isArray(toInputTemp) ? toInputTemp.join(',') : '';
+        }
 
-		// Read and set the offset selection from chrome storage
-		chrome.storage.sync.get('offset', function (result) {
-			if (result.offset) {
-				offsetSelect.value = result.offset;
-			}
-			toggleInputs(); // Update visibility based on the stored offset value
-		});
+        // 載入儲存的資料並更新頁面
+        await loadStoredData();
 
-		// Listen for changes on the offset select and save it to storage
-		offsetSelect.addEventListener('change', async function () {
-			const selectedOffset = offsetSelect.value;
-			chrome.storage.sync.set(
-				Object.assign(await chrome.storage.sync.get(), {
-					offset: selectedOffset,
-				}),
-			);
-			toggleInputs(); // Update visibility based on the selected offset
-		});
+        // 控制顯示輸入框的顯示邏輯
+        function toggleInputs() {
+            const offsetValue = offsetSelect.value;
+            if (offsetValue === 'none') {
+                fromInput.style.display = 'none';
+                toInput.style.display = 'none';
+                xInput.style.display = 'none';
+                zInput.style.display = 'none';
+                body.style.height = '190px'; // 隱藏時縮小頁面高度
+            } else if (offsetValue === 'latlon') {
+                fromInput.style.display = 'flex';
+                toInput.style.display = 'flex';
+                xInput.style.display = 'none';
+                zInput.style.display = 'none';
+                body.style.height = '300px'; // 顯示時擴大頁面高度
+            } else if (offsetValue === 'btexz') {
+                fromInput.style.display = 'none';
+                toInput.style.display = 'none';
+                xInput.style.display = 'flex';
+                zInput.style.display = 'flex';
+                body.style.height = '300px'; // 顯示時擴大頁面高度
+            }
+        }
 
-		// 監聽 X 和 Z 的輸入變化，並將它們的值儲存到 chrome.storage.sync
-		xOffset.addEventListener('input', async function (e) {
-			chrome.storage.sync.set(
-				Object.assign(await chrome.storage.sync.get(), {
-					xInput: Number(e.target.value),
-				}),
-			);
-		});
+        // 儲存 offset 設定
+        offsetSelect.addEventListener('change', async function () {
+            const selectedOffset = offsetSelect.value;
+            chrome.storage.sync.set({ offset: selectedOffset });
+            toggleInputs(); // 更新輸入框顯示邏輯
+        });
 
-		zOffset.addEventListener('input', async function (e) {
-			chrome.storage.sync.set(
-				Object.assign(await chrome.storage.sync.get(), {
-					zInput: Number(e.target.value),
-				}),
-			);
-		});
+        // 儲存 X 和 Z 的輸入值
+        xOffset.addEventListener('input', async function (e) {
+            chrome.storage.sync.set({ xInput: Number(e.target.value) });
+        });
 
-		fromOffset.addEventListener('input', async function (e) {
-			chrome.storage.sync.set(
-				Object.assign(await chrome.storage.sync.get(), {
-					fromInput: e.target.value.split(',').map(Number),
-				}),
-			);
-		});
+        zOffset.addEventListener('input', async function (e) {
+            chrome.storage.sync.set({ zInput: Number(e.target.value) });
+        });
 
-		toOffset.addEventListener('input', async function (e) {
-			chrome.storage.sync.set(
-				Object.assign(await chrome.storage.sync.get(), {
-					toInput: e.target.value.split(',').map(Number),
-				}),
-			);
-		});
-		
-		// Function to clear the input field
-		async function clearInputField(inputElement, storageKey) {
-			inputElement.value = ''; // Clear the input value
-			// Save the cleared value to storage
-			await chrome.storage.sync.set({
-				[storageKey]: null, // Use `null` to signify that it's cleared
-			});
-		}
-		
-		// Add event listeners to the clear buttons for each input field
-		async function addClearButtonListeners() {
-			const clearButtons = document.querySelectorAll('.clear-btn');
-			clearButtons.forEach(button => {
-				button.addEventListener('click', async (event) => {
-					const inputId = event.target.getAttribute('data-clear');
-					const inputField = document.getElementById(inputId);
-					if (inputField) {
-						// Call clearInputField and pass the correct storage key
-						await clearInputField(inputField, inputId.replace('Input', '') + 'Input');
-					}
-				});
-			});
-		}
-		
-		// Initialize the clear button functionality
-		await addClearButtonListeners();
+        // 儲存 from 和 to 的座標值
+        fromOffset.addEventListener('input', async function (e) {
+            chrome.storage.sync.set({ fromInput: e.target.value.split(',').map(Number) });
+        });
 
-		// Initial call to set the state based on the default selection
-		toggleInputs();
-	});
+        toOffset.addEventListener('input', async function (e) {
+            chrome.storage.sync.set({ toInput: e.target.value.split(',').map(Number) });
+        });
+
+        // 清除資料的邏輯
+        function clearData(inputElement, storageKey) {
+            // 清除輸入框的資料
+            inputElement.value = '';
+
+            // 更新存儲中的值為空
+            chrome.storage.sync.set({ [storageKey]: '' });
+        }
+
+        // 綁定清除按鈕
+        const clearButtons = document.querySelectorAll('.clear-btn');
+        clearButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const inputId = this.getAttribute('data-clear');
+                const inputElement = document.getElementById(inputId);
+
+                // 根據 data-clear 屬性選擇清除的資料
+                if (inputElement === fromOffset) {
+                    clearData(fromOffset, 'fromInput');
+                } else if (inputElement === toOffset) {
+                    clearData(toOffset, 'toInput');
+                } else if (inputElement === xOffset) {
+                    clearData(xOffset, 'xInput');
+                } else if (inputElement === zOffset) {
+                    clearData(zOffset, 'zInput');
+                }
+            });
+        });
+
+        // 初始設置，根據存儲的選項來設定顯示
+        toggleInputs();
+    });
 })();
