@@ -38,38 +38,45 @@ document.addEventListener('keydown', function (event) {
 });
 
 // 創建一個 MutationObserver 來監聽 DOM 的變化
-const observer = new MutationObserver((mutationsList) => {
-    const siteInfo = getSiteInfo(window.location.hostname);
-    // 當 DOM 中有變化時，檢查是否找到 .fxNQSd 元素
-    const element = document.querySelector(siteInfo.selector);
-    
-    if (element) {
-        // 停止監聽，因為已經找到目標元素
-        observer.disconnect();
-
-        // 綁定點擊事件，無論選項是否已選中，點擊都會進行處理
-        element.addEventListener('click', function() {
-            // 延時執行 clipboard 操作
-            setTimeout(() => {
-                // 等待 Google Maps 完成複製後再執行 clipboard 操作
-                navigator.clipboard.readText()
-                    .then(text => {
-                        const parsedCoord = siteInfo.processCoordinates(text);
-                        console.log('Clipboard text:', parsedCoord);
-                        if (parsedCoord) {
-                            copyCoordinates(parsedCoord);
-                        } else {
-                            console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Failed to read clipboard contents: ', err);
-                    });
-            }, 10);  // 延遲 0.01 秒
-
-            // 重新開始監聽，等元素再次出現
-            observer.observe(document.body, { childList: true, subtree: true });
-        });
+const observer = new MutationObserver(async (mutationsList) => {
+	try {
+		// 從 chrome storage 讀取 offset 設定
+		const result = await chrome.storage.sync.get('offset');
+		const offsetValue = result.offset || 'none';  // 預設為 'none'
+	    // 當 DOM 中有變化時，檢查是否找到 .fxNQSd 元素
+		const siteInfo = getSiteInfo(window.location.hostname);
+	    const element = document.querySelector(siteInfo.selector);
+	    
+	    if (element && offsetValue !== 'none') {
+	        // 停止監聽，因為已經找到目標元素
+	        observer.disconnect();
+	
+	        // 綁定點擊事件，無論選項是否已選中，點擊都會進行處理
+	        element.addEventListener('click', function() {
+	            // 延時執行 clipboard 操作
+	            setTimeout(() => {
+	                // 等待 Google Maps 完成複製後再執行 clipboard 操作
+	                navigator.clipboard.readText()
+	                    .then(text => {
+	                        const parsedCoord = siteInfo.processCoordinates(text);
+	                        console.log('Clipboard text:', parsedCoord);
+	                        if (parsedCoord) {
+	                            copyCoordinates(parsedCoord);
+	                        } else {
+	                            console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
+	                        }
+	                    })
+	                    .catch(err => {
+	                        console.error('Failed to read clipboard contents: ', err);
+	                    });
+	            }, 10);  // 延遲 0.01 秒
+	
+	            // 重新開始監聽，等元素再次出現
+	            observer.observe(document.body, { childList: true, subtree: true });
+	        });
+	    }
+	} catch (error) {
+        console.error("Error in MutationObserver callback:", error);
     }
 });
 
@@ -89,11 +96,73 @@ function getSiteInfo(hostname) {
 			selector: '.ol-mouse-position',
 			processCoordinates: lonlat,
 		},
+		'gis.ardswc.gov.tw': {
+			name: 'BigGIS',
+			selector: '#Cursor_Coord',
+			processCoordinates: latlon,
+		},
+		'ysnp.3dgis.tw': {
+			name: 'Yushan National Park',
+			selector: '#statusbar',
+			processCoordinates: yushanCoordinates,
+		},
+		'urban.planning.ntpc.gov.tw': {
+			name: 'Ntpc Urban and Rural Info',
+			selector: '.map-info-block.coord-twd97',
+			processCoordinates: urplanning,
+		},
+		'urplanning.tycg.gov.tw': {
+			name: 'Taoyuan GIS Map',
+			selector: '.map-info-block.coord-twd97',
+			processCoordinates: urplanning,
+		},
+		'tymap.tycg.gov.tw': {
+			name: 'Taoyuan Topomap',
+			selector: '.map-info-block.coord-twd97',
+			processCoordinates: urplanning,
+		},
+		'gismap.taichung.gov.tw': {
+			name: 'Taichung GIS Map',
+			selector: 'td.omg-statusbar-footbar-btn.omg-statusbar-foot-mousePosition.ol-unselectable',
+			processCoordinates: gismap,
+		},
 		'gisdawh.kcg.gov.tw': {
-			name: 'Kaohsiung City Government I-MAP',
-			selector:
-				'td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable',
-			processCoordinates: KaohsiungIMAP,
+			name: function () {
+				const path = window.location.pathname;
+				if (path.includes('kcmap')) {
+					// 高雄地圖網
+					return 'Kaohsiung City Government I-MAP';
+				} else if (path.includes('landeasy')) {
+					// 高雄地籍圖資服務網
+					return 'Kaohsiung LandEasy';
+				}
+			},
+			selector: function () {
+				const path = window.location.pathname;
+				if (path.includes('kcmap')) {
+					// 高雄地圖網
+					return 'td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable';
+				} else if (path.includes('landeasy')) {
+					// 高雄地籍圖資服務網
+					return '#mouseInfo';
+				}
+				return null;  // 如果沒有匹配的頁面，返回 null
+			},	
+			processCoordinates: function () {
+				const path = window.location.pathname;
+				if (path.includes('kcmap')) {
+					// 高雄地圖網
+					return gismap;
+				} else if (path.includes('landeasy')) {
+					// 高雄地籍圖資服務網
+					return lonlat;
+				}
+			},
+		},
+		'urbangis.kcg.gov.tw': {
+			name: 'Kaohsiung Urban Planning MAP',
+			selector: '#txtX, #txtY',
+			processCoordinates: TWD97XY,
 		},
 		'urban.kinmen.gov.tw': {
 			name: 'Kinmen Map Service',
@@ -111,8 +180,24 @@ function getSiteInfo(hostname) {
 
 // 根據選擇器獲取座標文本的函數
 function getCoordinatesText(selector) {
-	const element = document.querySelector(selector);
-	return element ? element.textContent.trim() : null;
+    // 使用 querySelectorAll 來選擇所有匹配的元素
+    const elements = document.querySelectorAll(selector);
+
+    // 如果找到元素
+    if (elements.length > 0) {
+        // 如果只有一個元素，返回該元素的文本內容
+        if (elements.length === 1) {
+            return elements[0].textContent.trim();
+        } else {
+            // 如果有多個元素，返回每個元素的文本內容組成的數組
+            return Array.from(elements).map(element => element.textContent.trim());
+        }
+    } else {
+        console.error(`No elements found for selector: ${selector}`);
+    }
+
+    // 如果找不到任何元素，返回 null
+    return null;
 }
 
 // 解析經緯座標格式的函數
@@ -127,7 +212,7 @@ function lonlat(coordinatesText) {
 }
 
 function latlon(coordinatesText) {
-	const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/;
+	const regex = /(-?\d+\.\d+)[\s,]+(-?\d+\.\d+)/;
 	const match = coordinatesText.match(regex);
 
 	if (match) {
@@ -136,13 +221,48 @@ function latlon(coordinatesText) {
 	return null;
 }
 
-// 解析高雄市政府 I-MAP 座標格式的函數
-function KaohsiungIMAP(coordinatesText) {
+// 玉山國家公園的座標解析函數
+function yushanCoordinates(coordinatesText) {
+	const regex = /經度：(-?\d+\.\d+)\s+緯度：(-?\d+\.\d+)/;
+	const match = coordinatesText.match(regex);
+
+	if (match) {
+		return { lon: parseFloat(match[1]), lat: parseFloat(match[2]) };
+	}
+	return null;
+}
+
+// 解析 TWD97 座標格式的函數
+function TWD97XY(coordinatesText) {
+	const coordText = { x: parseFloat(coordinatesText[0]), y: parseFloat(coordinatesText[1]) };
+
+	if (coordText) {
+		// 提取 X97 和 Y97 座標
+		return TWD97toWGS84(coordText);
+	}
+	return null;
+}
+
+// 解析城鄉資訊相關平台座標格式的函數
+function urplanning(coordinatesText) {
+	const regex = /X97:\s*(-?\d+\.\d+),\s*Y97:\s*(-?\d+\.\d+)/;
+	const match = coordinatesText.match(regex);
+	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+
+	if (coordText) {
+		// 提取 X97 和 Y97 座標
+		return TWD97toWGS84(coordText);
+	}
+	return null;
+}
+
+// 解析 GIS 相關平台座標格式的函數
+function gismap(coordinatesText) {
 	const regex = /X:(-?\d+\.\d+)\s*Y:(-?\d+\.\d+)/;
 	const match = coordinatesText.match(regex);
 	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
 	// 檢查文本是否包含 "97二度121分帶"
-	if (coordinatesText.includes('97AUTO:121分帶') || coordinatesText.includes('97二度121')) {
+	if (coordinatesText.includes('97AUTO:121分帶') || coordinatesText.includes('97二度121') || coordinatesText.includes('TWD97 二度分帶')) {
 		return TWD97toWGS84(coordText);
 	// 檢查文本是否包含 "WGS84經緯度"
 	} else if (coordinatesText.includes('WGS84經緯度')) {
