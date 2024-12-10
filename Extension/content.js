@@ -5,7 +5,6 @@ console.log('Content script loaded!');
 
 // 定義 coord 物件，初始化座標為 null
 let coord = { lat: null, lon: null }; // WGS84
-let coord97 = { x: null, y: null }; // TWD97
 
 // 監聽快捷鍵 Alt + C
 document.addEventListener('keydown', function (event) {
@@ -38,68 +37,51 @@ document.addEventListener('keydown', function (event) {
 	}
 });
 
-// 用來追蹤元素的偵測狀態
-let elementDetected = false;
+// 創建一個 MutationObserver 來監聽 DOM 的變化
+const observer = new MutationObserver((mutationsList) => {
+    const siteInfo = getSiteInfo(window.location.hostname);
+    // 當 DOM 中有變化時，檢查是否找到 .fxNQSd 元素
+    const element = document.querySelector(siteInfo.selector);
+    
+    if (element) {
+        // 停止監聽，因為已經找到目標元素
+        observer.disconnect();
 
-// 攔截 Google Maps 的複製行為
-const detectElement = () => {
-	if (window.location.hostname === 'www.google.com') {
-		const siteInfo = getSiteInfo(window.location.hostname);
-		const element = document.querySelector(siteInfo.selector);
+        // 綁定點擊事件，無論選項是否已選中，點擊都會進行處理
+        element.addEventListener('click', function() {
+            // 延時執行 clipboard 操作
+            setTimeout(() => {
+                // 等待 Google Maps 完成複製後再執行 clipboard 操作
+                navigator.clipboard.readText()
+                    .then(text => {
+                        const parsedCoord = siteInfo.processCoordinates(text);
+                        console.log('Clipboard text:', parsedCoord);
+                        if (parsedCoord) {
+                            copyCoordinates(parsedCoord);
+                        } else {
+                            console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Failed to read clipboard contents: ', err);
+                    });
+            }, 10);  // 延遲 0.01 秒
 
-		// 如果元素存在並且之前未偵測過，則執行後續程式
-		if (element && !elementDetected) {
-			elementDetected = true;  // 標記已經偵測過
-
-			// 如果找到了元素，執行 clipboard 操作
-			console.log('Element found, reading clipboard...');
-			navigator.clipboard.readText()
-				.then(text => {
-					const parsedCoord = siteInfo.processCoordinates(text);
-					console.log('Clipboard text:', parsedCoord);
-					if (parsedCoord) {
-						copyCoordinates(parsedCoord);
-					} else {
-						console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
-					}
-				})
-				.catch(err => {
-					console.error('Failed to read clipboard contents: ', err);
-				});
-		}
-	}
-};
-
-// 使用 MutationObserver 監聽 DOM 變化
-const observer = new MutationObserver((mutationsList, observer) => {
-	// 檢查該元素是否還在頁面中
-	const siteInfo = getSiteInfo(window.location.hostname);
-	const element = document.querySelector(siteInfo.selector);
-
-	// 呼叫 detectElement 進行偵測
-	detectElement();
+            // 重新開始監聽，等元素再次出現
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    }
 });
 
-// 設定 MutationObserver 監聽條件，偵測 DOM 樹變化
-observer.observe(document.body, {
-	childList: true,  // 監聽子節點的新增或刪除
-	subtree: true     // 監聽整個 DOM 樹的變化
-});
-
-// 監聽滑鼠按鈕釋放事件來重置 elementDetected
-document.addEventListener('mouseup', (event) => {
-	if (window.location.hostname === 'www.google.com' && event.button === 0) {
-		console.log('Right-click detected (mouseup). Resetting detection flag.');
-		elementDetected = false;  // 重置標誌
-	}
-});
+// 設定 MutationObserver 監控 document.body 中的所有子元素變化
+observer.observe(document.body, { childList: true, subtree: true });
 
 // 判斷當前網站並返回相關資訊的函數
 function getSiteInfo(hostname) {
 	const sites = {
 		'www.google.com': {
 			name: 'Google Maps',
-			selector: '.hdeJwf.ymw5uf.Hk4XGb.TEYSPe',
+			selector: '.fxNQSd',
 			processCoordinates: latlon,
 		},
 		'maps.nlsc.gov.tw': {
