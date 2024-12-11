@@ -41,7 +41,7 @@ const observer = new MutationObserver(async (mutationsList) => {
 		// 從 chrome storage 讀取 offset 設定
 		const result = await chrome.storage.sync.get('offset');
 		const offsetValue = result.offset || 'none';  // 預設為 'none'
-	    // 當 DOM 中有變化時，檢查是否找到 .fxNQSd 元素
+	    // 當 DOM 中有變化時，檢查是否找到特定元素
 		const siteInfo = getSiteInfo(window.location.hostname);
 	    const element = document.querySelector(siteInfo.selector);
 	    
@@ -53,7 +53,7 @@ const observer = new MutationObserver(async (mutationsList) => {
 	        element.addEventListener('click', function() {
 	            // 延時執行 clipboard 操作
 	            setTimeout(() => {
-	                // 等待 Google Maps 完成複製後再執行 clipboard 操作
+	                // 等待複製座標完成後再執行 clipboard 操作
 	                navigator.clipboard.readText()
 	                    .then(text => {
 	                        const parsedCoord = siteInfo.processCoordinates(text);
@@ -89,10 +89,20 @@ function getSiteInfo(hostname) {
 			selector: '.fxNQSd',
 			processCoordinates: latlon,
 		},
+		'www.bing.com': {
+			name: 'Bing Maps',
+			selector: '.secTextLink[data-tag="secTextLink"]',
+			processCoordinates: latlon,
+		},
 		'maps.nlsc.gov.tw': {
 			name: 'Taiwan Map Service',
 			selector: '.ol-mouse-position',
 			processCoordinates: lonlat,
+		},
+		'3dmaps.nlsc.gov.tw': {
+			name: 'Taiwan 3D Map Service',
+			selector: '.pg-TableType1RightContent',
+			processCoordinates: latlon,
 		},
 		'gis.ardswc.gov.tw': {
 			name: 'BigGIS',
@@ -204,7 +214,7 @@ function getCoordinatesText(selector) {
     // 如果找到元素
     if (elements.length > 0) {
         // 如果只有一個元素，返回該元素的文本內容
-        if (window.location.hostname === 'urbangis.hccg.gov.tw') {
+        if (window.location.hostname === 'urbangis.hccg.gov.tw' || window.location.hostname === '3dmaps.nlsc.gov.tw') {
             return elements[1].textContent.trim();
         } else if (elements.length === 1) {
             return elements[0].textContent.trim();
@@ -232,7 +242,7 @@ function lonlat(coordinatesText) {
 }
 
 function latlon(coordinatesText) {
-	const regex = /(-?\d+\.\d+)[\s,]+(-?\d+\.\d+)/;
+	const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)(?:\/度)?/;
 	const match = coordinatesText.match(regex);
 
 	if (match) {
@@ -243,7 +253,7 @@ function latlon(coordinatesText) {
 
 // 玉山國家公園的座標解析函數
 function yushanCoordinates(coordinatesText) {
-	const regex = /經度：(-?\d+\.\d+)\s+緯度：(-?\d+\.\d+)/;
+	const regex = /\[經度\]：\s*(-?\d+\.\d+)\s+\[緯度\]：\s*(-?\d+\.\d+)/;
 	const match = coordinatesText.match(regex);
 
 	if (match) {
