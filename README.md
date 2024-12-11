@@ -16,6 +16,9 @@
 5. 完成！開啟圖資平台使用。
 ## 支援平台
 ### 座標偏移 + 快捷鍵複製座標
+* [Google Maps](https://www.google.com/maps)
+* [Bing Maps](https://www.bing.com/maps)
+* [Yandex Maps](https://yandex.com/maps/)
 * [國土測繪圖資服務雲](https://maps.nlsc.gov.tw/T09/mapshow.action)
 * [BigGIS巨量空間資訊系統](https://gis.ardswc.gov.tw/)
 * [新北市城鄉資訊查詢平台](https://urban.planning.ntpc.gov.tw/)
@@ -27,10 +30,6 @@
 * [屏東縣地理圖資整合系統](https://nsp.tcd.gov.tw/tcd_pingtung/)
 * [臺東縣圖資雲端分享平臺](https://map.taitung.gov.tw/)
 * [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
-### 座標偏移
-* [Google Maps](https://www.google.com/maps)
-* [Bing Maps](https://www.bing.com/maps)
-* [Yandex Maps](https://yandex.com/maps/)
 ### Todo
 * [多維度國家空間資訊服務平臺](https://3dmaps.nlsc.gov.tw/)
 * [玉山國家公園管理處3D整合圖台](https://ysnp.3dgis.tw/)
