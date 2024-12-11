@@ -187,6 +187,11 @@ function getSiteInfo(hostname) {
 			selector: 'td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable',
 			processCoordinates: gismap,
 		},
+		'map.hl.gov.tw': {
+			name: 'Hualien GIS Map',
+			selector: '#twd97',
+			processCoordinates: TWD97UTM,
+		},
 		'upgis.klcg.gov.tw': {
 			name: 'Keelung Urban Planning GIS',
 			selector: '#coordShow',
@@ -267,7 +272,20 @@ function TWD97XY(coordinatesText) {
 	const coordText = { x: parseFloat(coordinatesText[0]), y: parseFloat(coordinatesText[1]) };
 
 	if (coordText) {
-		// 提取 X97 和 Y97 座標
+		// TWD97 UTM to WGS84 Latitude and Longitude
+		return TWD97toWGS84(coordText);
+	}
+	return null;
+}
+
+// 解析 TWD97 座標格式的函數
+function TWD97UTM(coordinatesText) {
+	const regex = /(\d+\.\d+)\s*,\s*(\d+\.\d+)/;
+	const match = coordinatesText.match(regex);
+	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+
+	if (coordText) {
+		// TWD97 UTM to WGS84 Latitude and Longitude
 		return TWD97toWGS84(coordText);
 	}
 	return null;
@@ -293,7 +311,7 @@ function urplanning(coordinatesText) {
 	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
 
 	if (coordText) {
-		// 提取 X97 和 Y97 座標
+		// TWD97 UTM to WGS84 Latitude and Longitude
 		return TWD97toWGS84(coordText);
 	}
 	return null;
@@ -306,7 +324,7 @@ function pingtunggis(coordinatesText) {
 	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
 
 	if (coordText) {
-		// 提取 X97 和 Y97 座標
+		// TWD97 UTM to WGS84 Latitude and Longitude
 		return TWD97toWGS84(coordText);
 	}
 	return null;
@@ -319,7 +337,7 @@ function keelunggis(coordinatesText) {
 	const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
 
 	if (coordText) {
-		// 提取 X97 和 Y97 座標
+		// TWD97 UTM to WGS84 Latitude and Longitude
 		return TWD97toWGS84(coordText);
 	}
 	return null;
