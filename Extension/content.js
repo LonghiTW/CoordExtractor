@@ -2,14 +2,29 @@ console.log('CoordExtractor enabled!');
 
 // Define coordinate object and initialize MutationObserver
 let coord = { lat: null, lon: null }; // WGS84
-const observer = new MutationObserver(handleMutations);
+const copiedObserver = new MutationObserver(handlecopiedMutations);
+//const displayObserver = new MutationObserver(handleDisplayMutation);
+
+// 等待元素加載的輔助函數
+function waitForElement(selector) {
+    return new Promise((resolve, reject) => {
+        const interval = setInterval(() => {
+            if (document.querySelector(selector)) {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 100); // 每100毫秒檢查一次
+    });
+}
 
 (async () => {
 	// Listen for keyboard events
-	document.addEventListener('keydown', handleKeydown);
+	document.addEventListener('keydown', handleKeydown, true);
 
 	// Observe DOM mutations
-	observer.observe(document.body, { childList: true, subtree: true });
+	if (window.location.hostname === 'www.google.com' && window.location.pathname.includes("maps")) {
+		copiedObserver.observe(document.body, { childList: true, subtree: true });
+	}
 })();
 
 // Handle keyboard event for Alt + C
@@ -33,7 +48,7 @@ function handleKeydown(event) {
 }
 
 // MutationObserver callback
-async function handleMutations(mutationsList) {
+async function handlecopiedMutations(mutationsList) {
     try {
 		// 透過函數讀取 offset 設定
         const offsetValue = await getOffsetValue();
@@ -43,7 +58,7 @@ async function handleMutations(mutationsList) {
 
         if (element && offsetValue !== 'none') {
 			// 找到目標元素就停止監聽
-            observer.disconnect();
+            copiedObserver.disconnect();
 			// 綁定點擊事件，無論選項是否已選中，點擊都會進行處理
             element.addEventListener('click', () => handleElementClick(siteInfo, offsetValue));
         }
@@ -62,7 +77,8 @@ function handleElementClick(siteInfo, offsetValue) {
             .catch(err => console.error('Failed to read clipboard contents: ', err));
     }, 10); // 延遲 0.01 秒
 	// 重新開始監聽，等元素再次出現
-	observer.observe(document.body, { childList: true, subtree: true });
+	copiedObserver.observe(document.body, { childList: true, subtree: true });
+	console.log("重新開始監聽");
 }
 
 // Process clipboard text and handle coordinates
@@ -94,7 +110,12 @@ function getSiteInfo(hostname) {
 		},
 		'www.bing.com': {
 			name: 'Bing Maps',
-			selector: '.secTextLink[data-tag="secTextLink"]',
+			selector: '.actionText', // '.secTextLink[data-tag="secTextLink"]'
+			processCoordinates: latlon,
+		},
+		'yandex.com': {
+			name: 'Yandex Maps',
+			selector: '.toponym-card-title-view__coords-badge', // '.clipboard__help'
 			processCoordinates: latlon,
 		},
 		'maps.nlsc.gov.tw': {
@@ -191,7 +212,7 @@ function getSiteInfo(hostname) {
 		},
 		'map.hl.gov.tw': {
 			name: 'Hualien GIS Map',
-			selector: '#twd97',
+			selector: '#twd97Status',
 			processCoordinates: TWD97UTM,
 		},
 		'upgis.klcg.gov.tw': {
@@ -222,9 +243,12 @@ function getCoordinatesText(selector) {
         if (isSpecialSite(window.location.hostname)) {
 			// 如果是特定網站，返回該元素的文本內容
             return elements[1].textContent.trim();
-		} else if (elements.length === 1) {
+        } else if (elements.length === 1) {
 			// 如果只有一個元素，返回該元素的文本內容
             return elements[0].textContent.trim();
+        } else if (window.location.hostname === 'www.bing.com') {
+			// 如果是 Bing Maps ，返回該元素的文本內容
+            return Array.from(elements).map(el => el.textContent.trim())[8];
         } else {
 			// 如果有多個元素，返回每個元素的文本內容組成的數組
             return Array.from(elements).map(el => el.textContent.trim());
