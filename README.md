@@ -34,4 +34,5 @@
 ### Todo
 * [多維度國家空間資訊服務平臺](https://3dmaps.nlsc.gov.tw/)
 * [玉山國家公園管理處3D整合圖台](https://ysnp.3dgis.tw/)
+* [花蓮縣地理資訊整合應用平台](https://map.hl.gov.tw/HLGIS)
 * [基隆市都市計畫書圖查詢](https://upgis.klcg.gov.tw/kl_land/MapQuery/index.asp)
