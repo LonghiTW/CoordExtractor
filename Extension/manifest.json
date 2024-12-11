@@ -21,6 +21,7 @@
 		"*://urbangis.hccg.gov.tw/*",
 		"*://nsp.tcd.gov.tw/*",
 		"*://map.taitung.gov.tw/*",
+		"*://map.hl.gov.tw/*",
 		"*://upgis.klcg.gov.tw/*",
 		"*://urban.kinmen.gov.tw/kmgisweb/*"
 	],
@@ -52,6 +53,7 @@
 				"*://urbangis.hccg.gov.tw/*",
 				"*://nsp.tcd.gov.tw/*",
 				"*://map.taitung.gov.tw/*",
+				"*://map.hl.gov.tw/*",
 				"*://upgis.klcg.gov.tw/*",
 				"*://urban.kinmen.gov.tw/kmgisweb/*"
 			],
