@@ -15,7 +15,6 @@
 4. 點擊**載入未封裝項目**按鈕並選擇剛剛解壓縮後檔案所在的目錄。
 5. 完成！開啟圖資平台使用。
 ## 支援平台
-### 座標偏移 + 快捷鍵複製座標
 * [Google Maps](https://www.google.com/maps)
 * [Bing Maps](https://www.bing.com/maps)
 * [Yandex Maps](https://yandex.com/maps/)
