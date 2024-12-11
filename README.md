@@ -1,5 +1,5 @@
 # CoordExtractor
-圖資平台用的Google網頁擴充功能，使用快捷鍵複製經緯座標。
+圖資平台用的Google網頁擴充功能，能偏移經緯座標並使用快捷鍵複製。
 ## 快捷鍵
 `Alt` + `c`
 ## 使用方式
@@ -15,7 +15,23 @@
 4. 點擊**載入未封裝項目**按鈕並選擇剛剛解壓縮後檔案所在的目錄。
 5. 完成！開啟圖資平台使用。
 ## 支援平台
-* [Google Maps](https://www.google.com/maps) (只支援座標偏移，無法用快捷鍵複製座標)
+### 座標偏移 + 快捷鍵複製座標
 * [國土測繪圖資服務雲](https://maps.nlsc.gov.tw/T09/mapshow.action)
+* [BigGIS巨量空間資訊系統](https://gis.ardswc.gov.tw/)
+* [新北市城鄉資訊查詢平台](https://urban.planning.ntpc.gov.tw/)
+* [桃園市政府都市計畫地理資訊服務網](https://urplanning.tycg.gov.tw/gisMap/Map.aspx)
 * [高雄地圖網](https://gisdawh.kcg.gov.tw/)
+* [高雄市都市計畫地理資訊系統](https://urbangis.kcg.gov.tw/UBA/web_page/UBA010100.jsp)
+* [高雄地籍圖資服務網](https://gisdawh.kcg.gov.tw/landeasy/)
+* [新竹市都市發展資訊整合圖台](https://urbangis.hccg.gov.tw/HcUrbanMap/)
+* [屏東縣地理圖資整合系統](https://nsp.tcd.gov.tw/tcd_pingtung/)
+* [臺東縣圖資雲端分享平臺](https://map.taitung.gov.tw/)
 * [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
+### 座標偏移
+* [Google Maps](https://www.google.com/maps)
+* [Bing Maps](https://www.bing.com/maps)
+* [Yandex Maps](https://yandex.com/maps/)
+### Todo
+* [多維度國家空間資訊服務平臺](https://3dmaps.nlsc.gov.tw/)
+* [玉山國家公園管理處3D整合圖台](https://ysnp.3dgis.tw/)
+* [基隆市都市計畫書圖查詢](https://upgis.klcg.gov.tw/kl_land/MapQuery/index.asp)
