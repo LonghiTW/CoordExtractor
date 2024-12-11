@@ -5,18 +5,6 @@ let coord = { lat: null, lon: null }; // WGS84
 const copiedObserver = new MutationObserver(handlecopiedMutations);
 //const displayObserver = new MutationObserver(handleDisplayMutation);
 
-// 等待元素加載的輔助函數
-function waitForElement(selector) {
-    return new Promise((resolve, reject) => {
-        const interval = setInterval(() => {
-            if (document.querySelector(selector)) {
-                clearInterval(interval);
-                resolve();
-            }
-        }, 100); // 每100毫秒檢查一次
-    });
-}
-
 (async () => {
 	// Listen for keyboard events
 	document.addEventListener('keydown', handleKeydown, true);
