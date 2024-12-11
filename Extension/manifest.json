@@ -6,7 +6,10 @@
 	"permissions": ["activeTab", "scripting", "storage", "clipboardRead", "clipboardWrite"],
 	"host_permissions": [
 		"*://*.google.com/*",
+		"*://*.bing.com/*",
+		"*://yandex.com/*",
 		"*://maps.nlsc.gov.tw/*",
+		"*://3dmaps.nlsc.gov.tw/*",
 		"*://gis.ardswc.gov.tw/*",
 		"*://ysnp.3dgis.tw/*",
 		"*://urban.planning.ntpc.gov.tw/*",
@@ -34,7 +37,10 @@
 		{
 			"matches": [
 				"*://*.google.com/maps/*",
+				"*://*.bing.com/*",
+				"*://yandex.com/*",
 				"*://maps.nlsc.gov.tw/*",
+				"*://3dmaps.nlsc.gov.tw/*",
 				"*://gis.ardswc.gov.tw/*",
 				"*://ysnp.3dgis.tw/*",
 				"*://urban.planning.ntpc.gov.tw/*",
