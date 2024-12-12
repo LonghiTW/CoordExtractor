@@ -1,7 +1,12 @@
 # CoordExtractor
 圖資平台用的Google網頁擴充功能，能偏移經緯座標並使用快捷鍵複製。
-## 快捷鍵
-`Alt` + `c`
+## 功能
+### 設定偏移
+於擴充功能彈出視窗可以設定偏移方式與偏移量。
+### 提取座標
+* [Google Maps](https://www.google.com/maps)：同其原本複製座標的方式
+* [Bing Maps](https://www.bing.com/maps)、[Yandex Maps](https://yandex.com/maps/)：進入其原本複製座標的介面，但不使用介面上複製鍵，改用`Alt` + `c`複製。
+* 其他：直接使用`Alt` + `c`複製座標。
 ## 使用方式
 ### 開發人員工具(功能不全)
 1. 開啟圖資平台。
@@ -29,7 +34,7 @@
 * [屏東縣地理圖資整合系統](https://nsp.tcd.gov.tw/tcd_pingtung/)
 * [臺東縣圖資雲端分享平臺](https://map.taitung.gov.tw/)
 * [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
-### Todo
+### ~~WantTodo~~
 * [多維度國家空間資訊服務平臺](https://3dmaps.nlsc.gov.tw/)
 * [玉山國家公園管理處3D整合圖台](https://ysnp.3dgis.tw/)
 * [花蓮縣地理資訊整合應用平台](https://map.hl.gov.tw/HLGIS)
