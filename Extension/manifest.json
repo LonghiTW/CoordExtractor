@@ -1,63 +1,63 @@
 {
-	"manifest_version": 3,
-	"name": "CoordExtractor",
-	"version": "1.1",
-	"description": "A coordinate extraction tool for map services.",
-	"permissions": ["activeTab", "scripting", "storage", "clipboardRead", "clipboardWrite"],
-	"host_permissions": [
-		"*://*.google.com/*",
-		"*://*.bing.com/*",
-		"*://yandex.com/*",
-		"*://maps.nlsc.gov.tw/*",
-		"*://3dmaps.nlsc.gov.tw/*",
-		"*://gis.ardswc.gov.tw/*",
-		"*://ysnp.3dgis.tw/*",
-		"*://urban.planning.ntpc.gov.tw/*",
-		"*://urplanning.tycg.gov.tw/*",
-		"*://tymap.tycg.gov.tw/*",
-		"*://gismap.taichung.gov.tw/*",
-		"*://gisdawh.kcg.gov.tw/*",
-		"*://urbangis.kcg.gov.tw/*",
-		"*://urbangis.hccg.gov.tw/*",
-		"*://nsp.tcd.gov.tw/*",
-		"*://map.taitung.gov.tw/*",
-		"*://map.hl.gov.tw/*",
-		"*://upgis.klcg.gov.tw/*",
-		"*://urban.kinmen.gov.tw/kmgisweb/*"
-	],
-	"action": {
-		"default_popup": "popup.html",
-		"default_icon": "chip_extraction.png"
-	},
-	"icons": {
-		"16": "chip_extraction.png",
-		"48": "chip_extraction.png",
-		"128": "chip_extraction.png"
-	},
-	"content_scripts": [
-		{
-			"matches": [
-				"*://*.google.com/maps/*",
-				"*://*.bing.com/*",
-				"*://yandex.com/*",
-				"*://maps.nlsc.gov.tw/*",
-				"*://3dmaps.nlsc.gov.tw/*",
-				"*://gis.ardswc.gov.tw/*",
-				"*://ysnp.3dgis.tw/*",
-				"*://urban.planning.ntpc.gov.tw/*",
-				"*://urplanning.tycg.gov.tw/*",
-				"*://tymap.tycg.gov.tw/*",
-				"*://gismap.taichung.gov.tw/*",
-				"*://gisdawh.kcg.gov.tw/*",
-				"*://urbangis.kcg.gov.tw/*",
-				"*://urbangis.hccg.gov.tw/*",
-				"*://nsp.tcd.gov.tw/*",
-				"*://map.taitung.gov.tw/*",
-				"*://map.hl.gov.tw/*",
-				"*://upgis.klcg.gov.tw/*",
-				"*://urban.kinmen.gov.tw/kmgisweb/*"
-			],
-			"js": ["./content.js"]
-		}
-	]
+    "manifest_version": 3,
+    "name": "CoordExtractor",
+    "version": "1.1",
+    "description": "A coordinate extraction tool for map services.",
+    "permissions": ["activeTab", "scripting", "storage", "clipboardRead", "clipboardWrite"],
+    "host_permissions": [
+        "*://*.google.com/*",
+        "*://*.bing.com/*",
+        "*://yandex.com/*",
+        "*://maps.nlsc.gov.tw/*",
+        "*://3dmaps.nlsc.gov.tw/*",
+        "*://gis.ardswc.gov.tw/*",
+        "*://ysnp.3dgis.tw/*",
+        "*://urban.planning.ntpc.gov.tw/*",
+        "*://urplanning.tycg.gov.tw/*",
+        "*://tymap.tycg.gov.tw/*",
+        "*://gismap.taichung.gov.tw/*",
+        "*://gisdawh.kcg.gov.tw/*",
+        "*://urbangis.kcg.gov.tw/*",
+        "*://urbangis.hccg.gov.tw/*",
+        "*://nsp.tcd.gov.tw/*",
+        "*://map.taitung.gov.tw/*",
+        "*://map.hl.gov.tw/*",
+        "*://upgis.klcg.gov.tw/*",
+        "*://urban.kinmen.gov.tw/kmgisweb/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": "chip_extraction.png"
+    },
+    "icons": {
+        "16": "chip_extraction.png",
+        "48": "chip_extraction.png",
+        "128": "chip_extraction.png"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.google.com/maps/*",
+                "*://*.bing.com/*",
+                "*://yandex.com/*",
+                "*://maps.nlsc.gov.tw/*",
+                "*://3dmaps.nlsc.gov.tw/*",
+                "*://gis.ardswc.gov.tw/*",
+                "*://ysnp.3dgis.tw/*",
+                "*://urban.planning.ntpc.gov.tw/*",
+                "*://urplanning.tycg.gov.tw/*",
+                "*://tymap.tycg.gov.tw/*",
+                "*://gismap.taichung.gov.tw/*",
+                "*://gisdawh.kcg.gov.tw/*",
+                "*://urbangis.kcg.gov.tw/*",
+                "*://urbangis.hccg.gov.tw/*",
+                "*://nsp.tcd.gov.tw/*",
+                "*://map.taitung.gov.tw/*",
+                "*://map.hl.gov.tw/*",
+                "*://upgis.klcg.gov.tw/*",
+                "*://urban.kinmen.gov.tw/kmgisweb/*"
+            ],
+            "js": ["./content.js"]
+        }
+    ]
 }
