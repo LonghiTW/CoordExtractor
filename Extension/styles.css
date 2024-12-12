@@ -1,75 +1,75 @@
 /* General Body Settings */
 body {
-  width: 370px;
-  font-family: Arial, sans-serif;
-  padding: 20px;
-  transition: height 0.3s ease;
+    width: 370px;
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    transition: height 0.3s ease;
 }
 
 /* Default hidden fields */
 #fromInput, #toInput, #xInput, #zInput {
-  display: none;
+    display: none;
 }
 
 /* Adjust label and input field gap */
 .form-label {
-  margin-bottom: 0rem; /* The vertical distance between label and bottom */
-  margin-right: 0.5rem; /* The horizontal space between label and input */
+    margin-bottom: 0rem; /* The vertical distance between label and bottom */
+    margin-right: 0.5rem; /* The horizontal space between label and input */
 }
 
 /* Adjust margin to make labels aligned with the top text */
 .row {
-  margin-left: 0;
-  margin-right: 0;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 /* Adjust label and input alignment */
 .text-end {
-  text-align: right; /* Align text of the label to the right */
+    text-align: right; /* Align text of the label to the right */
 }
 
 /* To make label containers align with the content above */
 .col-2 {
-  padding-right: 0;
+    padding-right: 0;
 }
 
 .col-10 {
-  padding-left: 0;
+    padding-left: 0;
 }
 
 /* Ensure label and input align properly within the row */
 .form-select, .form-control {
-  width: 100%;
+    width: 100%;
 }
 
 /* Reduce space between label and input */
 .mb-3.row {
-  margin-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 /* Align the labels to the right within the container */
 .col-2 {
-  display: flex;
-  justify-content: flex-end; /* Ensure label is right aligned */
-  align-items: center;
+    display: flex;
+    justify-content: flex-end; /* Ensure label is right aligned */
+    align-items: center;
 }
 
 /* Input container for clear button positioning */
 .input-container {
-  position: relative;
+    position: relative;
 }
 
 /* Clear button style */
 .clear-btn {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: none;
-  cursor: pointer;
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    cursor: pointer;
 }
 
 /* Show the clear button on hover */
 .input-container:hover .clear-btn {
-  display: inline-block;
+    display: inline-block;
 }
