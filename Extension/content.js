@@ -14,11 +14,11 @@ const displayObserver = new MutationObserver(handleDisplayMutation);
         copiedObserver.observe(document.body, { childList: true, subtree: true });
     }
     
-    // 配置 MutationObserver，監控 #twd97Status 元素的屬性變動
-    //const siteInfo = getSiteInfo(window.location.hostname);
-    //const displayStatus = document.querySelector(siteInfo.selector);
-    //if (window.location.hostname === 'map.hl.gov.tw' && displayStatus) {
-    //    displayObserver.observe(displayStatus, { attributes: true, subtree: false });
+    // 配置 MutationObserver，監控 #twd97Status 元素的屬性變動 
+    //if (window.location.hostname === 'map.hl.gov.tw') {
+        //const siteInfo = getSiteInfo(window.location.hostname);
+        //const displayStatus = document.getElementById(siteInfo.iframe).contentDocument.querySelector(siteInfo.selector);
+        //displayObserver.observe(displayStatus, { attributes: true, subtree: false });
     //}
 })();
 
@@ -49,8 +49,11 @@ async function handleCopiedMutations(mutationsList) {
         const offsetValue = await getOffsetValue();
         // 檢查是否找到特定元素
         const siteInfo = getSiteInfo(window.location.hostname);
-        const element = document.querySelector(siteInfo.selector);
-
+        if (siteInfo.iframe) {
+            const element = document.getElementById(siteInfo.iframe).contentDocument.querySelector(siteInfo.selector);
+        } else {
+            const element = document.querySelector(siteInfo.selector);
+        }
         if (element && offsetValue !== 'none') {
             // 找到目標元素就停止監聽
             copiedObserver.disconnect();
@@ -82,7 +85,7 @@ function handleDisplayMutation(mutationsList) {
         // 檢查是否是 style 屬性變動
         if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
             const siteInfo = getSiteInfo(window.location.hostname);
-            const displayStatus = document.querySelector(siteInfo.selector);
+            const displayStatus = document.getElementById(siteInfo.iframe).contentDocument.querySelector(siteInfo.selector);
 
             if (displayStatus) {
                 // 獲取元素的 display 屬性值
@@ -165,6 +168,7 @@ function getSiteInfo(hostname) {
         },
         'ysnp.3dgis.tw': {
             name: 'Yushan National Park',
+			iframe: 'ifm_main',
             selector: '#statusbar',
             processCoordinates: yushanCoordinates,
         },
@@ -242,6 +246,7 @@ function getSiteInfo(hostname) {
         },
         'map.hl.gov.tw': {
             name: 'Hualien GIS Map',
+			iframe: 'ifrGIS',
             selector: '#twd97Status',
             processCoordinates: TWD97UTM,
         },
