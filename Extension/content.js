@@ -3,14 +3,14 @@ console.log('CoordExtractor enabled!');
 // Define coordinate object and initialize MutationObserver
 let coord = { lat: null, lon: null }; // WGS84
 const hostname = window.location.hostname;
+const siteInfo = getSiteInfo(hostname);
 const copiedObserver = new MutationObserver(handleCopiedMutations);
 const displayObserver = new MutationObserver(handleDisplayMutation);
+let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作只執行一次
 
 (async () => {
     // Listen for keyboard events
-	if (hostname === 'ysnp.3dgis.tw') {
-        const siteInfo = getSiteInfo(hostname);
-    
+	if (hostname === 'ysnp.3dgis.tw' || hostname === 'map.hl.gov.tw') {
         // 確保 iframe 元素存在
         const iframeElement = document.getElementById(siteInfo.iframe);
     
@@ -23,40 +23,48 @@ const displayObserver = new MutationObserver(handleDisplayMutation);
           
                     // 確保 iframe 內部文檔存在
                     if (iframeDoc) {
-                        // 綁定 keydown 事件
-                        iframeDoc.addEventListener('keydown', handleKeydown);
+                        // 先綁定 keydown 事件
+                        iframeDoc.addEventListener('keydown', (event) => handleKeydown(event, siteInfo));
                         console.log('Keydown event listener added to iframe.');
+
+                        // 使用 MutationObserver 監控 iframe 內部的變動
+                        const iframeObserver = new MutationObserver((mutationsList) => {
+                            mutationsList.forEach(mutation => {
+                                // 檢查是否有新元素添加到 iframe 內部
+                                if (mutation.type === 'childList') {
+                                    const displayStatus = iframeDoc.querySelector(siteInfo.copier);
+                                    if (displayStatus) {
+                                        // 找到 #twd97Status 元素，開始監控它
+                                        iframeObserver.disconnect(); // 停止監控 DOM 結構
+                                        displayObserver.observe(displayStatus, { attributes: true, subtree: false });
+                                        console.log('#twd97Status 已經出現，開始監控屬性變動');
+                                    }
+                                }
+                            });
+                        });
+
+                        // 配置 MutationObserver，監控新增的子節點
+                        iframeObserver.observe(iframeDoc.body, { childList: true, subtree: true });
                     }
                 } catch (e) {
-                    // 如果出現跨域問題，會捕獲錯誤
                     console.error('Cannot access iframe content:', e);
                 }
             };
         }
     } else {
-        document.addEventListener('keydown', handleKeydown, true);
-	}
+        document.addEventListener('keydown', (event) => handleKeydown(event, siteInfo), true);
+    }
 
-    // Observe DOM mutations
+    // Observe DOM mutations for other sites if needed
     if (hostname === 'www.google.com' && window.location.pathname.includes("maps")) {
         copiedObserver.observe(document.body, { childList: true, subtree: true });
-    }
-    
-    // 配置 MutationObserver，監控 #twd97Status 元素的屬性變動
-    if (hostname === 'map.hl.gov.tw') {
-        const siteInfo = getSiteInfo(hostname);
-        const displayStatus = document.querySelector(siteInfo.selector);
-        if (displayStatus) {
-            displayObserver.observe(displayStatus, { attributes: true, subtree: false });
-        }
     }
 })();
 
 // Handle keyboard event for Alt + C
-function handleKeydown(event) {
+function handleKeydown(event, siteInfo) {
     if (event.altKey && event.key === 'c') {
         // 使用判斷網站的函數來獲取當前網站的元素選擇器和座標解析邏輯
-        const siteInfo = getSiteInfo(hostname);
         if (siteInfo && typeof siteInfo.processCoordinates === 'function') {
             // 擷取 WGS84 經緯度文本並顯示
             const coordinatesText = getCoordinatesText(siteInfo.iframe, siteInfo.selector);
@@ -78,7 +86,6 @@ async function handleCopiedMutations(mutationsList) {
         // 透過函數讀取 offset 設定
         const offsetValue = await getOffsetValue();
         // 檢查是否找到特定元素
-        const siteInfo = getSiteInfo(hostname);
         const element = document.querySelector(siteInfo.selector);
 
         if (element && offsetValue !== 'none') {
@@ -111,8 +118,9 @@ function handleDisplayMutation(mutationsList) {
     mutationsList.forEach(mutation => {
         // 檢查是否是 style 屬性變動
         if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-            const siteInfo = getSiteInfo(hostname);
-            const displayStatus = document.querySelector(siteInfo.selector);
+            const iframeElement = document.getElementById(siteInfo.iframe);
+            const iframeDoc = iframeElement.contentDocument;
+            const displayStatus = iframeDoc.querySelector(siteInfo.copier);
 
             if (displayStatus) {
                 // 獲取元素的 display 屬性值
@@ -123,16 +131,22 @@ function handleDisplayMutation(mutationsList) {
                     console.log('#twd97Status 顯示了！');
                     // 找到目標元素就停止監聽
                     copiedObserver.disconnect();
-                    // 延時執行 clipboard 操作
-                    setTimeout(() => {
-                        // 等待複製座標完成後再執行 clipboard 操作
-                        navigator.clipboard.readText()
-                            .then(text => processClipboardText(text, siteInfo))
-                            .catch(err => console.error('Failed to read clipboard contents: ', err));
-                    }, 10); // 延遲 0.01 秒
+                    // 只有在 clipboard 尚未執行過的情況下，才執行 clipboard 操作
+                    if (!clipboardExecuted) {
+                        clipboardExecuted = true; // 設置為 true，防止重複執行
+                        
+                        // 延時執行 clipboard 操作
+                        setTimeout(() => {
+                            navigator.clipboard.readText()
+                                .then(text => processClipboardText(text, siteInfo))
+                                .catch(err => console.error('Failed to read clipboard contents: ', err));
+                        }, 10); // 延遲 0.01 秒
+                    }
                 } else if (displayStyle === 'none') {
                     // 如果 display 是 'none'，表示元素被隱藏
                     console.log('#twd97Status 隱藏了！');
+                    // 當元素隱藏時，將 clipboardExecuted 重新設置為 false，以便下一次元素顯示時可以再次執行 clipboard 操作
+                    clipboardExecuted = false;
                     // 重新開始監聽，等元素再次出現
                     copiedObserver.observe(document.body, { childList: true, subtree: true });
                 }
@@ -273,7 +287,9 @@ function getSiteInfo(hostname) {
         },
         'map.hl.gov.tw': {
             name: 'Hualien GIS Map',
-            selector: '#twd97Status',
+            iframe: 'ifrGIS',
+            selector: '#twd97',
+            copier: '#twd97Status',
             processCoordinates: TWD97UTM,
         },
         'upgis.klcg.gov.tw': {
@@ -299,10 +315,16 @@ function getSiteInfo(hostname) {
 function getCoordinatesText(iframe, selector) {
     // 使用 querySelectorAll 來選擇所有匹配的元素
     const elements = iframe ?
-        document.getElementById(iframe).contentDocument.querySelectorAll(selector) :
+        document.getElementById(iframe).contentDocument.querySelector(selector) :
         document.querySelectorAll(selector);
     // 如果找到元素
-    if (elements.length > 0) {
+    if (iframe) {
+        if (hostname === 'ysnp.3dgis.tw') {
+            return elements.textContent.trim();
+        } else if (hostname === 'map.hl.gov.tw') {
+            return elements.innerText.trim();
+        }
+    } else if (elements.length > 0) {
         if (isSpecialSite(hostname)) {
             // 如果是特定網站，返回該元素的文本內容
             return elements[1].textContent.trim();
