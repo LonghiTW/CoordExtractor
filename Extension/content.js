@@ -2,34 +2,64 @@ console.log('CoordExtractor enabled!');
 
 // Define coordinate object and initialize MutationObserver
 let coord = { lat: null, lon: null }; // WGS84
+const hostname = window.location.hostname;
 const copiedObserver = new MutationObserver(handleCopiedMutations);
 const displayObserver = new MutationObserver(handleDisplayMutation);
 
 (async () => {
     // Listen for keyboard events
-    document.addEventListener('keydown', handleKeydown, true);
+	if (hostname === 'ysnp.3dgis.tw') {
+        const siteInfo = getSiteInfo(hostname);
+    
+        // 確保 iframe 元素存在
+        const iframeElement = document.getElementById(siteInfo.iframe);
+    
+        if (iframeElement) {
+            // 等待 iframe 內容加載完成後才添加事件監聽
+            iframeElement.onload = function() {
+                try {
+                    // 訪問 iframe 的 contentDocument
+                    const iframeDoc = iframeElement.contentDocument;
+          
+                    // 確保 iframe 內部文檔存在
+                    if (iframeDoc) {
+                        // 綁定 keydown 事件
+                        iframeDoc.addEventListener('keydown', handleKeydown);
+                        console.log('Keydown event listener added to iframe.');
+                    }
+                } catch (e) {
+                    // 如果出現跨域問題，會捕獲錯誤
+                    console.error('Cannot access iframe content:', e);
+                }
+            };
+        }
+    } else {
+        document.addEventListener('keydown', handleKeydown, true);
+	}
 
     // Observe DOM mutations
-    if (window.location.hostname === 'www.google.com' && window.location.pathname.includes("maps")) {
+    if (hostname === 'www.google.com' && window.location.pathname.includes("maps")) {
         copiedObserver.observe(document.body, { childList: true, subtree: true });
     }
     
-    // 配置 MutationObserver，監控 #twd97Status 元素的屬性變動 
-    //if (window.location.hostname === 'map.hl.gov.tw') {
-        //const siteInfo = getSiteInfo(window.location.hostname);
-        //const displayStatus = document.getElementById(siteInfo.iframe).contentDocument.querySelector(siteInfo.selector);
-        //displayObserver.observe(displayStatus, { attributes: true, subtree: false });
-    //}
+    // 配置 MutationObserver，監控 #twd97Status 元素的屬性變動
+    if (hostname === 'map.hl.gov.tw') {
+        const siteInfo = getSiteInfo(hostname);
+        const displayStatus = document.querySelector(siteInfo.selector);
+        if (displayStatus) {
+            displayObserver.observe(displayStatus, { attributes: true, subtree: false });
+        }
+    }
 })();
 
 // Handle keyboard event for Alt + C
 function handleKeydown(event) {
     if (event.altKey && event.key === 'c') {
         // 使用判斷網站的函數來獲取當前網站的元素選擇器和座標解析邏輯
-        const siteInfo = getSiteInfo(window.location.hostname);
+        const siteInfo = getSiteInfo(hostname);
         if (siteInfo && typeof siteInfo.processCoordinates === 'function') {
             // 擷取 WGS84 經緯度文本並顯示
-            const coordinatesText = getCoordinatesText(siteInfo.selector);
+            const coordinatesText = getCoordinatesText(siteInfo.iframe, siteInfo.selector);
             // 嘗試解析座標並處理
             if (coordinatesText) {
                 processClipboardText(coordinatesText, siteInfo);  // 使用 processClipboardText 處理座標
@@ -37,7 +67,7 @@ function handleKeydown(event) {
                 console.error(`Coordinates element not found for ${siteInfo.name}.`);
             }
         } else {
-            console.error(`No valid processCoordinates function found for ${window.location.hostname}.`);
+            console.error(`No valid processCoordinates function found for ${hostname}.`);
         }
     }
 }
@@ -48,12 +78,9 @@ async function handleCopiedMutations(mutationsList) {
         // 透過函數讀取 offset 設定
         const offsetValue = await getOffsetValue();
         // 檢查是否找到特定元素
-        const siteInfo = getSiteInfo(window.location.hostname);
-        if (siteInfo.iframe) {
-            const element = document.getElementById(siteInfo.iframe).contentDocument.querySelector(siteInfo.selector);
-        } else {
-            const element = document.querySelector(siteInfo.selector);
-        }
+        const siteInfo = getSiteInfo(hostname);
+        const element = document.querySelector(siteInfo.selector);
+
         if (element && offsetValue !== 'none') {
             // 找到目標元素就停止監聽
             copiedObserver.disconnect();
@@ -84,8 +111,8 @@ function handleDisplayMutation(mutationsList) {
     mutationsList.forEach(mutation => {
         // 檢查是否是 style 屬性變動
         if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-            const siteInfo = getSiteInfo(window.location.hostname);
-            const displayStatus = document.getElementById(siteInfo.iframe).contentDocument.querySelector(siteInfo.selector);
+            const siteInfo = getSiteInfo(hostname);
+            const displayStatus = document.querySelector(siteInfo.selector);
 
             if (displayStatus) {
                 // 獲取元素的 display 屬性值
@@ -168,7 +195,7 @@ function getSiteInfo(hostname) {
         },
         'ysnp.3dgis.tw': {
             name: 'Yushan National Park',
-			iframe: 'ifm_main',
+            iframe: 'ifm_main',
             selector: '#statusbar',
             processCoordinates: yushanCoordinates,
         },
@@ -246,7 +273,6 @@ function getSiteInfo(hostname) {
         },
         'map.hl.gov.tw': {
             name: 'Hualien GIS Map',
-			iframe: 'ifrGIS',
             selector: '#twd97Status',
             processCoordinates: TWD97UTM,
         },
@@ -270,20 +296,25 @@ function getSiteInfo(hostname) {
 }
 
 // Get coordinates text from DOM based on the selector
-function getCoordinatesText(selector) {
+function getCoordinatesText(iframe, selector) {
     // 使用 querySelectorAll 來選擇所有匹配的元素
-    const elements = document.querySelectorAll(selector);
+    const elements = iframe ?
+        document.getElementById(iframe).contentDocument.querySelectorAll(selector) :
+        document.querySelectorAll(selector);
     // 如果找到元素
     if (elements.length > 0) {
-        if (isSpecialSite(window.location.hostname)) {
+        if (isSpecialSite(hostname)) {
             // 如果是特定網站，返回該元素的文本內容
             return elements[1].textContent.trim();
         } else if (elements.length === 1) {
             // 如果只有一個元素，返回該元素的文本內容
             return elements[0].textContent.trim();
-        } else if (window.location.hostname === 'www.bing.com') {
+        } else if (hostname === 'www.bing.com') {
             // 如果是 Bing Maps ，返回該元素的文本內容
             return Array.from(elements).map(el => el.textContent.trim())[8];
+        } else if (hostname === 'ysnp.3dgis.tw') {
+            // 如果是 Bing Maps ，返回該元素的文本內容
+            return Array.from(elements).map(el => el.textContent.trim())[0];
         } else {
             // 如果有多個元素，返回每個元素的文本內容組成的數組
             return Array.from(elements).map(el => el.textContent.trim());
