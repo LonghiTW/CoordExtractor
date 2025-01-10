@@ -10,32 +10,32 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
 
 (async () => {
     // Listen for keyboard events
-	if (hostname === 'ysnp.3dgis.tw' || hostname === 'map.hl.gov.tw') {
-        // 確保 iframe 元素存在
-        const iframeElement = document.getElementById(siteInfo.iframe);
+	if (siteInfo.ifframe) {
+        // 確保 frame 元素存在
+        const frameElement = document.getElementsByTagName(siteInfo.ifframe[0])[0];
     
-        if (iframeElement) {
-            // 等待 iframe 內容加載完成後才添加事件監聽
-            iframeElement.onload = function() {
+        if (frameElement) {
+            // 等待 frame 內容加載完成後才添加事件監聽
+            frameElement.onload = function() {
                 try {
-                    // 訪問 iframe 的 contentDocument
-                    const iframeDoc = iframeElement.contentDocument;
+                    // 訪問 frame 的 contentDocument
+                    const frameDoc = frameElement.contentDocument;
           
-                    // 確保 iframe 內部文檔存在
-                    if (iframeDoc) {
+                    // 確保 frame 內部文檔存在
+                    if (frameDoc) {
                         // 先綁定 keydown 事件
-                        iframeDoc.addEventListener('keydown', (event) => handleKeydown(event, siteInfo));
-                        console.log('Keydown event listener added to iframe.');
+                        frameDoc.addEventListener('keydown', (event) => handleKeydown(event, siteInfo));
+                        console.log('Keydown event listener added to frame.');
 
-                        // 使用 MutationObserver 監控 iframe 內部的變動
-                        const iframeObserver = new MutationObserver((mutationsList) => {
+                        // 使用 MutationObserver 監控 frame 內部的變動
+                        const frameObserver = new MutationObserver((mutationsList) => {
                             mutationsList.forEach(mutation => {
-                                // 檢查是否有新元素添加到 iframe 內部
+                                // 檢查是否有新元素添加到 frame 內部
                                 if (mutation.type === 'childList') {
-                                    const displayStatus = iframeDoc.querySelector(siteInfo.copier);
+                                    const displayStatus = frameDoc.querySelector(siteInfo.copier);
                                     if (displayStatus) {
                                         // 找到 #twd97Status 元素，開始監控它
-                                        iframeObserver.disconnect(); // 停止監控 DOM 結構
+                                        frameObserver.disconnect(); // 停止監控 DOM 結構
                                         displayObserver.observe(displayStatus, { attributes: true, subtree: false });
                                         console.log('#twd97Status 已經出現，開始監控屬性變動');
                                     }
@@ -44,10 +44,10 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
                         });
 
                         // 配置 MutationObserver，監控新增的子節點
-                        iframeObserver.observe(iframeDoc.body, { childList: true, subtree: true });
+                        frameObserver.observe(frameDoc.body, { childList: true, subtree: true });
                     }
                 } catch (e) {
-                    console.error('Cannot access iframe content:', e);
+                    console.error('Cannot access frame content:', e);
                 }
             };
         }
@@ -63,11 +63,12 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
 
 // Handle keyboard event for Alt + C
 function handleKeydown(event, siteInfo) {
+	console.log(event);
     if (event.altKey && event.key === 'c') {
         // 使用判斷網站的函數來獲取當前網站的元素選擇器和座標解析邏輯
         if (siteInfo && typeof siteInfo.processCoordinates === 'function') {
             // 擷取 WGS84 經緯度文本並顯示
-            const coordinatesText = getCoordinatesText(siteInfo.iframe, siteInfo.selector);
+            const coordinatesText = getCoordinatesText(siteInfo.ifframe, siteInfo.selector, siteInfo.ifinnerText);
             // 嘗試解析座標並處理
             if (coordinatesText) {
                 processClipboardText(coordinatesText, siteInfo);  // 使用 processClipboardText 處理座標
@@ -118,9 +119,9 @@ function handleDisplayMutation(mutationsList) {
     mutationsList.forEach(mutation => {
         // 檢查是否是 style 屬性變動
         if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-            const iframeElement = document.getElementById(siteInfo.iframe);
-            const iframeDoc = iframeElement.contentDocument;
-            const displayStatus = iframeDoc.querySelector(siteInfo.copier);
+            const frameElement = document.getElementsByTagName(siteInfo.ifframe[0])[0];
+            const frameDoc = frameElement.contentDocument;
+            const displayStatus = frameDoc.querySelector(siteInfo.copier);
 
             if (displayStatus) {
                 // 獲取元素的 display 屬性值
@@ -179,58 +180,60 @@ function getSiteInfo(hostname) {
     const sites = {
         'www.google.com': {
             name: 'Google Maps',
-            selector: '.fxNQSd',
+            selector: ['.fxNQSd'],
             processCoordinates: latlon,
         },
         'www.bing.com': {
             name: 'Bing Maps',
-            selector: '.actionText', // '.secTextLink[data-tag="secTextLink"]'
+            selector: ['.actionText', 8], // '.secTextLink[data-tag="secTextLink"]'
             processCoordinates: latlon,
         },
         'yandex.com': {
             name: 'Yandex Maps',
-            selector: '.toponym-card-title-view__coords-badge', // '.clipboard__help'
+            selector: ['.toponym-card-title-view__coords-badge'], // '.clipboard__help'
             processCoordinates: latlon,
         },
         'maps.nlsc.gov.tw': {
             name: 'Taiwan Map Service',
-            selector: '.ol-mouse-position',
+            selector: ['.ol-mouse-position'],
             processCoordinates: lonlat,
         },
         '3dmaps.nlsc.gov.tw': {
             name: 'Taiwan 3D Map Service',
-            selector: '.pg-TableType1RightContent',
-            processCoordinates: latlon,
+			ifframe: ['frame', 0],
+            selector: ['.pg-TableType1RightContent', [5, 4]],
+            processCoordinates: TWD97XY,
         },
         'gis.ardswc.gov.tw': {
             name: 'BigGIS',
-            selector: '#Cursor_Coord',
+            selector: ['#Cursor_Coord'],
             processCoordinates: latlon,
         },
         'ysnp.3dgis.tw': {
             name: 'Yushan National Park',
-            iframe: 'ifm_main',
-            selector: '#statusbar',
+            ifframe: ['iframe', 0],
+            selector: ['#statusbar'],
+            ifinnerText: true,
             processCoordinates: yushanCoordinates,
         },
         'urban.planning.ntpc.gov.tw': {
             name: 'Ntpc Urban and Rural Info',
-            selector: '.map-info-block.coord-twd97',
+            selector: ['.map-info-block.coord-twd97'],
             processCoordinates: urplanning,
         },
         'urplanning.tycg.gov.tw': {
             name: 'Taoyuan GIS Map',
-            selector: '.map-info-block.coord-twd97',
+            selector: ['.map-info-block.coord-twd97'],
             processCoordinates: urplanning,
         },
         'tymap.tycg.gov.tw': {
             name: 'Taoyuan Topomap',
-            selector: '.map-info-block.coord-twd97',
+            selector: ['.map-info-block.coord-twd97'],
             processCoordinates: urplanning,
         },
         'gismap.taichung.gov.tw': {
             name: 'Taichung GIS Map',
-            selector: 'td.omg-statusbar-footbar-btn.omg-statusbar-foot-mousePosition.ol-unselectable',
+            selector: ['td.omg-statusbar-footbar-btn.omg-statusbar-foot-mousePosition.ol-unselectable'],
             processCoordinates: gismap,
         },
         'gisdawh.kcg.gov.tw': {
@@ -248,10 +251,10 @@ function getSiteInfo(hostname) {
                 const path = window.location.pathname;
                 if (path.includes('kcmap')) {
                     // 高雄地圖網
-                    return 'td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable';
+                    return ['td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable'];
                 } else if (path.includes('landeasy')) {
                     // 高雄地籍圖資服務網
-                    return '#mouseInfo';
+                    return ['#mouseInfo'];
                 }
             })(),    
             processCoordinates: (function () {
@@ -267,39 +270,42 @@ function getSiteInfo(hostname) {
         },
         'urbangis.kcg.gov.tw': {
             name: 'Kaohsiung Urban Planning MAP',
-            selector: '#txtX, #txtY',
+            selector: ['#txtX, #txtY'],
             processCoordinates: TWD97XY,
         },
         'urbangis.hccg.gov.tw': {
             name: 'Hsinchu Urban Planning MAP',
-            selector: 'small[data-v-79d61da6]',
+            selector: ['small[data-v-79d61da6]', 1],
             processCoordinates: urplanning,
         },
         'nsp.tcd.gov.tw': {
             name: 'Pingtung GIS MAP',
-            selector: '#info',
+            selector: ['#info'],
             processCoordinates: pingtunggis,
         },
         'map.taitung.gov.tw': {
             name: 'Taitung Map',
-            selector: 'td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable',
+            selector: ['td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable'],
             processCoordinates: gismap,
         },
         'map.hl.gov.tw': {
             name: 'Hualien GIS Map',
-            iframe: 'ifrGIS',
-            selector: '#twd97',
+            ifframe: ['iframe', 0],
+            selector: ['#twd97'],
+            ifinnerText: true,
             copier: '#twd97Status',
             processCoordinates: TWD97UTM,
         },
         'upgis.klcg.gov.tw': {
             name: 'Keelung Urban Planning GIS',
-            selector: '#coordShow',
+			ifframe: ['frame', 2],
+            selector: ['#coordShow'],
+            ifinnerText: true,
             processCoordinates: keelunggis,
         },
         'urban.kinmen.gov.tw': {
             name: 'Kinmen Map Service',
-            selector: '#info a:nth-of-type(2)', // 查找包含 WGS84 經緯度的 <a> 標籤
+            selector: ['#info a:nth-of-type(2)'], // 查找包含 WGS84 經緯度的 <a> 標籤
             processCoordinates: lonlat,
         },
     };
@@ -312,31 +318,27 @@ function getSiteInfo(hostname) {
 }
 
 // Get coordinates text from DOM based on the selector
-function getCoordinatesText(iframe, selector) {
+function getCoordinatesText(ifframe, selector, ifinnerText) {
     // 使用 querySelectorAll 來選擇所有匹配的元素
-    const elements = iframe ?
-        document.getElementById(iframe).contentDocument.querySelector(selector) :
-        document.querySelectorAll(selector);
+    const elements = ifframe ?
+        document.getElementsByTagName(ifframe[0])[ifframe[1]].contentDocument.querySelectorAll(selector[0]) :
+        document.querySelectorAll(selector[0]);
     // 如果找到元素
-    if (iframe) {
-        if (hostname === 'ysnp.3dgis.tw') {
-            return elements.textContent.trim();
-        } else if (hostname === 'map.hl.gov.tw') {
-            return elements.innerText.trim();
-        }
-    } else if (elements.length > 0) {
-        if (isSpecialSite(hostname)) {
+    if (elements.length > 0) {
+        if (selector[1]) {
+            if (Array.isArray(selector[1])) {
+                // 如果 selector[1] 是一個陣列，則選取對應的多個元素
+                return selector[1].map(index => elements[index].textContent.trim());
+            } else {
+                // 如果有指定元素項次，返回該項次的文本內容
+                return elements[selector[1]].textContent;
+            }
+        } else if (ifinnerText) {
             // 如果是特定網站，返回該元素的文本內容
-            return elements[1].textContent.trim();
+            return elements[0].innerText;
         } else if (elements.length === 1) {
             // 如果只有一個元素，返回該元素的文本內容
-            return elements[0].textContent.trim();
-        } else if (hostname === 'www.bing.com') {
-            // 如果是 Bing Maps ，返回該元素的文本內容
-            return Array.from(elements).map(el => el.textContent.trim())[8];
-        } else if (hostname === 'ysnp.3dgis.tw') {
-            // 如果是 Bing Maps ，返回該元素的文本內容
-            return Array.from(elements).map(el => el.textContent.trim())[0];
+            return elements.textContent().trim;
         } else {
             // 如果有多個元素，返回每個元素的文本內容組成的數組
             return Array.from(elements).map(el => el.textContent.trim());
