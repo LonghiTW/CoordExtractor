@@ -321,39 +321,35 @@ function getSiteInfo(hostname) {
 
 // Get coordinates text from DOM based on the selector
 function getCoordinatesText(ifframe, selector, ifinnerText) {
-    // 使用 querySelectorAll 來選擇所有匹配的元素
-    const elements = ifframe ?
-        document.getElementsByTagName(ifframe[0])[ifframe[1]].contentDocument.querySelectorAll(selector[0]) :
-        document.querySelectorAll(selector[0]);
-    // 如果找到元素
-    if (elements.length > 0) {
-        if (selector[1]) {
-            if (Array.isArray(selector[1])) {
-                // 如果 selector[1] 是一個陣列，則選取對應的多個元素
-                return selector[1].map(index => elements[index].textContent.trim());
-            } else {
-                // 如果有指定元素項次，返回該項次的文本內容
-                return elements[selector[1]].textContent;
-            }
-        } else if (ifinnerText) {
-            // 如果是特定網站，返回該元素的文本內容
-            return elements[0].innerText;
-        } else if (elements.length === 1) {
-            // 如果只有一個元素，返回該元素的文本內容
-            return elements[0].textContent.trim();
-        } else {
-            // 如果有多個元素，返回每個元素的文本內容組成的數組
-            return Array.from(elements).map(el => el.textContent.trim());
-        }
-    } else {
+    // 根據是否有 ifframe，選擇適當的元素
+    const elements = ifframe 
+        ? document.getElementsByTagName(ifframe[0])[ifframe[1]].contentDocument.querySelectorAll(selector[0])
+        : document.querySelectorAll(selector[0]);
+    
+    if (elements.length === 0) {
         console.error(`No elements found for selector: ${selector}`);
-        return null; // 如果找不到任何元素，返回 null
+        return null;
     }
-}
 
-// Helper to check if the site requires special handling
-function isSpecialSite(hostname) {
-    return hostname === 'urbangis.hccg.gov.tw' || hostname === '3dmaps.nlsc.gov.tw';
+    // 如果 selector[1] 存在，處理多選擇器的情況
+    if (selector[1]) {
+        if (Array.isArray(selector[1])) {
+            // 如果 selector[1] 是一個陣列，選取對應的多個元素
+            return selector[1].map(index => elements[index].textContent.trim());
+        }
+        // 否則返回單個指定索引的元素
+        return elements[selector[1]].textContent;
+    }
+
+    // 根據 ifinnerText 標識選擇不同的文本處理
+    if (ifinnerText) {
+        return elements[0].innerText;
+    }
+
+    // 返回單一或多個元素的文本內容
+    return elements.length === 1
+        ? elements[0].textContent.trim()  // 單個元素
+        : Array.from(elements).map(el => el.textContent.trim());  // 多個元素
 }
 
 // 解析 TWD97 XY 座標獨立格式的函數
