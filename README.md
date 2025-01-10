@@ -24,6 +24,7 @@
 * [Bing Maps](https://www.bing.com/maps)
 * [Yandex Maps](https://yandex.com/maps/)
 * [國土測繪圖資服務雲](https://maps.nlsc.gov.tw/T09/mapshow.action)
+* [多維度國家空間資訊服務平臺](https://3dmaps.nlsc.gov.tw/)
 * [BigGIS巨量空間資訊系統](https://gis.ardswc.gov.tw/)
 * [玉山國家公園管理處3D整合圖台](https://ysnp.3dgis.tw/)
 * [新北市城鄉資訊查詢平台](https://urban.planning.ntpc.gov.tw/)
@@ -35,7 +36,5 @@
 * [屏東縣地理圖資整合系統](https://nsp.tcd.gov.tw/tcd_pingtung/)
 * [花蓮縣地理資訊整合應用平台](https://map.hl.gov.tw/HLGIS)
 * [臺東縣圖資雲端分享平臺](https://map.taitung.gov.tw/)
-* [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
-### ~~WantTodo~~
-* [多維度國家空間資訊服務平臺](https://3dmaps.nlsc.gov.tw/)
 * [基隆市都市計畫書圖查詢](https://upgis.klcg.gov.tw/kl_land/MapQuery/index.asp)
+* [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
