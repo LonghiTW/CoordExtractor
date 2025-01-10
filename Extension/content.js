@@ -63,7 +63,6 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
 
 // Handle keyboard event for Alt + C
 function handleKeydown(event, siteInfo) {
-	console.log(event);
     if (event.altKey && event.key === 'c') {
         // 使用判斷網站的函數來獲取當前網站的元素選擇器和座標解析邏輯
         if (siteInfo && typeof siteInfo.processCoordinates === 'function') {
@@ -87,7 +86,7 @@ async function handleCopiedMutations(mutationsList) {
         // 透過函數讀取 offset 設定
         const offsetValue = await getOffsetValue();
         // 檢查是否找到特定元素
-        const element = document.querySelector(siteInfo.selector);
+        const element = document.querySelector(siteInfo.copier);
 
         if (element && offsetValue !== 'none') {
             // 找到目標元素就停止監聽
@@ -180,22 +179,25 @@ function getSiteInfo(hostname) {
     const sites = {
         'www.google.com': {
             name: 'Google Maps',
-            selector: ['.fxNQSd'],
+            copier: '.fxNQSd',
             processCoordinates: latlon,
         },
         'www.bing.com': {
             name: 'Bing Maps',
-            selector: ['.actionText', 8], // '.secTextLink[data-tag="secTextLink"]'
+            selector: ['.actionText', 8],
+            copier: '.secTextLink[data-tag="secTextLink"]',
             processCoordinates: latlon,
         },
         'yandex.com': {
             name: 'Yandex Maps',
-            selector: ['.toponym-card-title-view__coords-badge'], // '.clipboard__help'
+            selector: ['.toponym-card-title-view__coords-badge'],
+            copier: '.clipboard__help',
             processCoordinates: latlon,
         },
         'maps.nlsc.gov.tw': {
             name: 'Taiwan Map Service',
             selector: ['.ol-mouse-position'],
+            ifinnerText: true,
             processCoordinates: lonlat,
         },
         '3dmaps.nlsc.gov.tw': {
@@ -338,7 +340,7 @@ function getCoordinatesText(ifframe, selector, ifinnerText) {
             return elements[0].innerText;
         } else if (elements.length === 1) {
             // 如果只有一個元素，返回該元素的文本內容
-            return elements.textContent().trim;
+            return elements[0].textContent.trim();
         } else {
             // 如果有多個元素，返回每個元素的文本內容組成的數組
             return Array.from(elements).map(el => el.textContent.trim());
@@ -371,7 +373,7 @@ function parseLonLat(coordinatesText, regex) {
 
 // 解析經緯座標格式的函數
 function latlon(coordinatesText) {
-    const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)(?:\/度)?/;
+    const regex = /(-?\d+\.\d+)[\s,]+(-?\d+\.\d+)(?:\/度)?/;
     const match = coordinatesText.match(regex);
 
     if (match) {
