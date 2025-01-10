@@ -38,3 +38,8 @@
 * [臺東縣圖資雲端分享平臺](https://map.taitung.gov.tw/)
 * [基隆市都市計畫書圖查詢](https://upgis.klcg.gov.tw/kl_land/MapQuery/index.asp)
 * [金門縣圖資雲系統](https://urban.kinmen.gov.tw/kmgisweb/)
+## 常見問題
+### 複製到的座標與網頁顯示的不同
+ 1. 確認有沒有啟用座標偏移
+ 2. 若該網站提供精度更高TDW97二度分帶座標，則本擴充功能會採用TDW97座標再將其轉為WGS84的經緯座標，因此會有一些差異
+ 3. 儲存小數時受二進制與十進制轉換的影響，因此會產生些微誤差，這是JavaScript的特性
