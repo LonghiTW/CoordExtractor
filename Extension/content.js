@@ -64,38 +64,28 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
 // Handle keyboard event for Alt + C
 function handleKeydown(event, siteInfo) {
     if (event.altKey && event.key === 'c') {
-        // 使用判斷網站的函數來獲取當前網站的元素選擇器和座標解析邏輯
-        if (siteInfo && typeof siteInfo.processCoordinates === 'function') {
-            // 擷取 WGS84 經緯度文本並顯示
-            const coordinatesText = getCoordinatesText(siteInfo.ifframe, siteInfo.selector, siteInfo.ifinnerText);
-            // 嘗試解析座標並處理
-            if (coordinatesText) {
-                processClipboardText(coordinatesText, siteInfo);  // 使用 processClipboardText 處理座標
-            } else {
-                console.error(`Coordinates element not found for ${siteInfo.name}.`);
-            }
+        const coordinatesText = getCoordinatesText(siteInfo.ifframe, siteInfo.selector, siteInfo.ifinnerText);
+        // 嘗試解析座標並處理
+        if (coordinatesText) {
+            processClipboardText(coordinatesText, siteInfo);  // 使用 processClipboardText 處理座標
         } else {
-            console.error(`No valid processCoordinates function found for ${hostname}.`);
+            console.error(`Coordinates element not found for ${siteInfo.name}.`);
         }
     }
 }
 
 // MutationObserver callback
 async function handleCopiedMutations(mutationsList) {
-    try {
-        // 透過函數讀取 offset 設定
-        const offsetValue = await getOffsetValue();
-        // 檢查是否找到特定元素
-        const element = document.querySelector(siteInfo.copier);
+    // 透過函數讀取 offset 設定
+    const offsetValue = await getOffsetValue();
+    // 檢查是否找到特定元素
+    const element = document.querySelector(siteInfo.copier);
 
-        if (element && offsetValue !== 'none') {
-            // 找到目標元素就停止監聽
-            copiedObserver.disconnect();
-            // 綁定點擊事件，無論選項是否已選中，點擊都會進行處理
-            element.addEventListener('click', () => handleElementClick(siteInfo, offsetValue));
-        }
-    } catch (error) {
-        console.error("Error in MutationObserver callback:", error);
+    if (element && offsetValue !== 'none') {
+        // 找到目標元素就停止監聽
+        copiedObserver.disconnect();
+        // 綁定點擊事件，無論選項是否已選中，點擊都會進行處理
+        element.addEventListener('click', () => handleElementClick(siteInfo, offsetValue));
     }
 }
 
@@ -110,7 +100,6 @@ function handleElementClick(siteInfo, offsetValue) {
     }, 10); // 延遲 0.01 秒
     // 重新開始監聽，等元素再次出現
     copiedObserver.observe(document.body, { childList: true, subtree: true });
-    console.log("重新開始監聽");
 }
 
 // 創建 MutationObserver 來監聽元素的屬性變化
