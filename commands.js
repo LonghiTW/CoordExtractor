@@ -97,6 +97,12 @@ function getSiteInfo(hostname) {
             ifinnerText: true,
             processCoordinates: yushanCoordinates,
         },
+        '3dmap.ymsnp.gov.tw': {
+            name: 'Yangmingshan National Park',
+            selector: ['#coord'],
+            ifinnerText: true,
+            processCoordinates: lonlat,
+        },
         'urban.planning.ntpc.gov.tw': {
             name: 'Ntpc Urban and Rural Info',
             selector: ['.map-info-block.coord-twd97'],
