@@ -493,7 +493,7 @@ function applyBTEOffset(coord) {
             const zOffset = result.zInput || 0;
 
             let mccoord = BTE_PROJECTION.fromGeo(coord);
-            let offset = { x: mccoord.x + xOffset, y: mccoord.y + zOffset };
+            let offset = { x: mccoord.x - xOffset, y: mccoord.y - zOffset };
             resolve(BTE_PROJECTION.toGeo(offset)); // 非同步完成後將結果傳回
         });
     });
