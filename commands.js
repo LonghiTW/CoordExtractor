@@ -165,6 +165,11 @@ function getSiteInfo(hostname) {
             selector: ['small[data-v-79d61da6]', 1],
             processCoordinates: urplanning,
         },
+		'3dgis.hccg.gov.tw': {
+            name: 'Hsinchu Urban Planning 3D MAP',
+            selector: ['div[data-v-f2982cfb]', 1],
+            processCoordinates: urplanning,
+        },
         'nsp.tcd.gov.tw': {
             name: 'Pingtung GIS MAP',
             selector: ['#info'],
@@ -298,7 +303,7 @@ function landeasy(coordinatesText) {
 
 // 解析城鄉資訊相關平台座標格式的函數
 function urplanning(coordinatesText) {
-    const regex = /X97[:\s]*(-?\d+\.\d+)[,\s]+Y97[:\s]*(-?\d+\.\d+)/;
+    const regex = /X97[:\s]*([0-9.]+)\s*[, ]*\s*Y97[:\s]*([0-9.]+)/;
     return parseTWD97Coordinates(coordinatesText, regex);
 }
 
