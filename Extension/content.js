@@ -6,7 +6,7 @@ const hostname = window.location.hostname;
 const siteInfo = getSiteInfo(hostname);
 const copiedObserver = new MutationObserver(handleCopiedMutations);
 const displayObserver = new MutationObserver(handleDisplayMutation);
-let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作只執行一次
+let clipboardExecuted = false; // 建立一個旗標來確保 clipboard 操作只執行一次
 
 (async () => {
     // Listen for keyboard events
@@ -23,9 +23,7 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
           
                     // 確保 frame 內部文檔存在
                     if (frameDoc) {
-                        // 先綁定 keydown 事件
-                        frameDoc.addEventListener('keydown', (event) => handleKeydown(event, siteInfo));
-                        console.log('Keydown event listener added to frame.');
+                        console.log('Frame loaded, starting MutationObserver.');
 
                         // 使用 MutationObserver 監控 frame 內部的變動
                         const frameObserver = new MutationObserver((mutationsList) => {
@@ -51,13 +49,14 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
                 }
             };
         }
-    } else {
-        chrome.runtime.onMessage.addListener(({ action }) => {
-			if (action === "keydown-copy") {
-				handleKeydown(siteInfo);
-			}
-		});
     }
+	
+	// 使用 chrome.runtime 訊息監聽鍵盤事件
+	chrome.runtime.onMessage.addListener(({ action }) => {
+		if (action === "keydown-copy") {
+			handleKeydown(siteInfo);
+		}
+	});
 
     // Observe DOM mutations for other sites if needed
     if (hostname === 'www.google.com' && window.location.pathname.includes("maps")) {
@@ -67,7 +66,7 @@ let clipboardExecuted = false; // 創建一個旗標來確保 clipboard 操作�
 
 // Handle keyboard event for Alt + C
 function handleKeydown(siteInfo) {
-    const coordinatesText = getCoordinatesText(siteInfo.ifframe, siteInfo.selector, siteInfo.ifinnerText);
+    const coordinatesText = getCoordinatesText(siteInfo.ifframe, siteInfo.shadow, siteInfo.selector, siteInfo.ifinnerText);
     // 嘗試解析座標並處理
     if (coordinatesText) {
         processClipboardText(coordinatesText, siteInfo);  // 使用 processClipboardText 處理座標
@@ -148,7 +147,7 @@ function handleDisplayMutation(mutationsList) {
 
 // Process clipboard text and handle coordinates
 function processClipboardText(text, siteInfo) {
-    const parsedCoord = siteInfo.processCoordinates(text);
+    const parsedCoord = siteInfo.processCoordinates(text.replace(/[\u200E\u200F]/g, ''));
     if (parsedCoord) {
         copyCoordinates(parsedCoord);
     } else {
@@ -175,7 +174,7 @@ function getSiteInfo(hostname) {
         },
         'www.bing.com': {
             name: 'Bing Maps',
-            selector: ['.actionText', 8],
+            selector: ['span.alwaysLtr_CVy2G'],
             copier: '.secTextLink[data-tag="secTextLink"]',
             processCoordinates: latlon,
         },
@@ -248,19 +247,39 @@ function getSiteInfo(hostname) {
             })(),
             selector: (function () {
                 const path = window.location.pathname;
-                if (path.includes('kcmap')) {
+                if (path.includes('kcmap2')) {
+					// 高雄地圖網(新)
+					return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(12) > div.mousePosition > span > div'];
+				} else if (path.includes('kcmap')) {
                     // 高雄地圖網
                     return ['td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable'];
-                } else if (path.includes('landeasy')) {
+                } else if (path.includes('landeasy2')) {
+                    // 高雄地籍圖資服務網(新)
+                    return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(37) > div.mousePosition > span > div'];
+                }else if (path.includes('landeasy')) {
                     // 高雄地籍圖資服務網
                     return ['#mouseInfo'];
                 }
-            })(),    
+            })(),
+            ifinnerText: (function () {
+				const path = window.location.pathname;
+				if (path.includes('kcmap2')) {
+				    return true;
+				} else if (path.includes('landeasy2')) {
+				    return true;
+				}
+            })(),
             processCoordinates: (function () {
                 const path = window.location.pathname;
-                if (path.includes('kcmap')) {
+                if (path.includes('kcmap2')) {
+					// 高雄地圖網(新)
+                    return latlon;
+				} else if (path.includes('kcmap')) {
                     // 高雄地圖網
                     return gismap;
+                } else if (path.includes('landeasy2')) {
+                    // 高雄地籍圖資服務網(新)
+                    return latlon;
                 } else if (path.includes('landeasy')) {
                     // 高雄地籍圖資服務網
                     return landeasy;
@@ -281,6 +300,18 @@ function getSiteInfo(hostname) {
             name: 'Hsinchu Urban Planning 3D MAP',
             selector: ['div[data-v-f2982cfb]', 1],
             processCoordinates: urplanning,
+        },
+		'urbangis.chcg.gov.tw': {
+            name: 'Changhua Urban Planning GIS MAP',
+            selector: ['div.map-info-block.map-info-coord-block.coord-twd97'],
+            processCoordinates: urplanning,
+        },
+		'map.yunlin.gov.tw': {
+            name: 'Yunlin GIS MAP',
+			shadow: 'arcgis-coordinate-conversion',
+            selector: ['#arcgis-coordinate-conversion-list-item-0 > div'],
+			ifinnerText: true,
+            processCoordinates: lonlat,
         },
         'nsp.tcd.gov.tw': {
             name: 'Pingtung GIS MAP',
@@ -322,11 +353,13 @@ function getSiteInfo(hostname) {
 }
 
 // Get coordinates text from DOM based on the selector
-function getCoordinatesText(ifframe, selector, ifinnerText) {
+function getCoordinatesText(ifframe, shadow, selector, ifinnerText) {
     // 根據是否有 ifframe，選擇適當的元素
     const elements = ifframe 
         ? document.getElementsByTagName(ifframe[0])[ifframe[1]].contentDocument.querySelectorAll(selector[0])
-        : document.querySelectorAll(selector[0]);
+        : shadow
+		    ? document.querySelector(shadow).shadowRoot.querySelectorAll(selector[0])
+			: document.querySelectorAll(selector[0]);
     
     if (elements.length === 0) {
         console.error(`No elements found for selector: ${selector}`);
@@ -371,7 +404,7 @@ function parseLonLat(coordinatesText, regex) {
 
 // 解析經緯座標格式的函數
 function latlon(coordinatesText) {
-    const regex = /(-?\d+\.\d+)[\s,]+(-?\d+\.\d+)(?:\/度)?/;
+    const regex = /(\d+(?:\.\d+)?)(?:N)?[\s,]+(\d+(?:\.\d+)?)(?:E)?/;
     const match = coordinatesText.match(regex);
 
     if (match) {
@@ -381,7 +414,7 @@ function latlon(coordinatesText) {
 }
 
 function lonlat(coordinatesText) {
-    const regex = /(-?\d+\.\d+)\s*,\s*(-?\d+\.\d+)/;
+    const regex = /(-?\d+\.\d+)\s*°?\s*,\s*(-?\d+\.\d+)\s*°?/;
     return parseLonLat(coordinatesText, regex);
 }
 
