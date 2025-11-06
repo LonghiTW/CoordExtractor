@@ -4,8 +4,10 @@
 ### 設定偏移
 於擴充功能彈出視窗可以設定偏移方式與偏移量。
 ### 提取座標
-* [Google Maps](https://www.google.com/maps)：同其原本複製座標的方式
+* [Google Maps](https://www.google.com/maps)、[花蓮縣地理資訊整合應用平台](https://map.hl.gov.tw/HLGIS)：同其原本複製座標的方式
 * [Bing Maps](https://www.bing.com/maps)、[Yandex Maps](https://yandex.com/maps/)：進入其原本複製座標的介面，但不使用介面上複製鍵，改用`Alt` + `c`複製。
+* [多維度國家空間資訊服務平臺](https://3dmaps.nlsc.gov.tw/)：使用「點查詢」再使用`Alt` + `c`複製座標。
+* [雲林縣圖資整合平台](https://map.yunlin.gov.tw/map/twins)：開啟「測量工具」再使用`Alt` + `c`複製座標。
 * 其他：直接使用`Alt` + `c`複製座標。
 ## 使用方式
 ### 開發人員工具(功能不全)
