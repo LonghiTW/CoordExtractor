@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "CoordExtractor",
-    "version": "1.4",
+    "version": "1.5",
     "description": "A coordinate extraction tool for map services.",
     "permissions": ["activeTab", "scripting", "storage", "clipboardRead", "clipboardWrite"],
     "host_permissions": [
@@ -78,3 +78,4 @@
 		}
 	}
 }
+
