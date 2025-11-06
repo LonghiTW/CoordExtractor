@@ -45,7 +45,10 @@ function handleKeydown(event, siteInfo) {
 
 // Process clipboard text and handle coordinates
 function processClipboardText(text, siteInfo) {
-    const parsedCoord = siteInfo.processCoordinates(text.replace(/[\u200E\u200F]/g, ''));
+    const parsedCoord = Array.isArray(text)
+	    ? siteInfo.processCoordinates(text)
+	    : siteInfo.processCoordinates(text.replace(/[\u200E\u200F]/g, ''));
+    
     if (parsedCoord) {
         copyCoordinates(parsedCoord);
     } else {
