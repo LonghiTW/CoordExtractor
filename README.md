@@ -35,6 +35,8 @@
 * [高雄地籍圖資服務網](https://gisdawh.kcg.gov.tw/landeasy/)
 * [新竹市都市發展資訊整合圖台](https://urbangis.hccg.gov.tw/HcUrbanMap/)
 * [新竹市都市發展3D資訊圖台](https://3dgis.hccg.gov.tw/Hccg3dMap/guest)
+* [彰化縣都市計畫地理資訊服務網](https://urbangis.chcg.gov.tw/map/)
+* [雲林縣圖資整合平台](https://map.yunlin.gov.tw/map/twins)
 * [屏東縣地理圖資整合系統](https://nsp.tcd.gov.tw/tcd_pingtung/)
 * [花蓮縣地理資訊整合應用平台](https://map.hl.gov.tw/HLGIS)
 * [臺東縣圖資雲端分享平臺](https://map.taitung.gov.tw/)
