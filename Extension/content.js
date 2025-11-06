@@ -147,8 +147,11 @@ function handleDisplayMutation(mutationsList) {
 
 // Process clipboard text and handle coordinates
 function processClipboardText(text, siteInfo) {
-    const parsedCoord = siteInfo.processCoordinates(text.replace(/[\u200E\u200F]/g, ''));
-    if (parsedCoord) {
+    const parsedCoord = Array.isArray(text)
+	    ? siteInfo.processCoordinates(text)
+	    : siteInfo.processCoordinates(text.replace(/[\u200E\u200F]/g, ''));
+    
+	if (parsedCoord) {
         copyCoordinates(parsedCoord);
     } else {
         console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
@@ -354,7 +357,7 @@ function getSiteInfo(hostname) {
 
 // Get coordinates text from DOM based on the selector
 function getCoordinatesText(ifframe, shadow, selector, ifinnerText) {
-    // 根據是否有 ifframe，選擇適當的元素
+    // 根據是否有 ifframe 或 shadow，選擇適當的元素
     const elements = ifframe 
         ? document.getElementsByTagName(ifframe[0])[ifframe[1]].contentDocument.querySelectorAll(selector[0])
         : shadow
