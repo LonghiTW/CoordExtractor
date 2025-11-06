@@ -21,6 +21,8 @@
         "*://urbangis.kcg.gov.tw/*",
         "*://urbangis.hccg.gov.tw/*",
 		"*://3dgis.hccg.gov.tw/*",
+		"*://urbangis.chcg.gov.tw/*",
+		"*://map.yunlin.gov.tw/*",
         "*://nsp.tcd.gov.tw/*",
         "*://map.taitung.gov.tw/*",
         "*://map.hl.gov.tw/*",
@@ -58,6 +60,8 @@
                 "*://urbangis.kcg.gov.tw/*",
                 "*://urbangis.hccg.gov.tw/*",
 				"*://3dgis.hccg.gov.tw/*",
+				"*://urbangis.chcg.gov.tw/*",
+				"*://map.yunlin.gov.tw/*",
                 "*://nsp.tcd.gov.tw/*",
                 "*://map.taitung.gov.tw/*",
                 "*://map.hl.gov.tw/*",
@@ -74,4 +78,3 @@
 		}
 	}
 }
-
