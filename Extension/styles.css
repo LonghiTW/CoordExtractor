@@ -1,65 +1,60 @@
 /* General Body Settings */
 body {
-    width: 370px;
-    font-family: Arial, sans-serif;
+    width: 360px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding: 20px;
     transition: height 0.3s ease;
+    background: #ffffff;
 }
 
-/* Default hidden fields */
-#fromInput, #toInput, #xInput, #zInput {
+#fromInput,
+#toInput,
+#xInput,
+#zInput {
     display: none;
 }
 
-/* Adjust label and input field gap */
 .form-label {
-    margin-bottom: 0rem; /* The vertical distance between label and bottom */
-    margin-right: 0.5rem; /* The horizontal space between label and input */
+    margin-bottom: 0rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #444;
 }
 
-/* Adjust margin to make labels aligned with the top text */
 .row {
     margin-left: 0;
     margin-right: 0;
 }
 
-/* Adjust label and input alignment */
 .text-end {
-    text-align: right; /* Align text of the label to the right */
+    text-align: right;
 }
 
-/* To make label containers align with the content above */
-.col-2 {
-    padding-right: 0;
-}
-
-.col-10 {
-    padding-left: 0;
-}
-
-/* Ensure label and input align properly within the row */
-.form-select, .form-control {
-    width: 100%;
-}
-
-/* Reduce space between label and input */
-.mb-3.row {
-    margin-bottom: 0.5rem;
-}
-
-/* Align the labels to the right within the container */
-.col-2 {
+.col-3 {
+    padding-right: 10px;
     display: flex;
-    justify-content: flex-end; /* Ensure label is right aligned */
+    justify-content: flex-end;
     align-items: center;
 }
 
-/* Input container for clear button positioning */
+.col-9 {
+    padding-left: 0;
+}
+
+.form-select,
+.form-control {
+    width: 100%;
+    font-size: 0.9rem;
+}
+
+.mb-3.row {
+    margin-bottom: 0.75rem !important;
+}
+
 .input-container {
     position: relative;
 }
 
-/* Clear button style */
 .clear-btn {
     position: absolute;
     right: 14px;
@@ -67,9 +62,56 @@ body {
     transform: translateY(-50%);
     display: none;
     cursor: pointer;
+    color: #ccc;
 }
 
-/* Show the clear button on hover */
 .input-container:hover .clear-btn {
     display: inline-block;
+}
+
+.clear-btn:hover {
+    color: #666;
+}
+
+h4 {
+    color: #0d6efd;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+p {
+    font-size: 0.8rem;
+    color: #777;
+    margin-bottom: 15px;
+}
+
+.settings-group {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    margin-bottom: 15px;
+}
+
+.btn-group-equal {
+    display: flex;
+    width: 100%;
+}
+
+.btn-group-equal .btn {
+    flex: 1;
+}
+
+.section-title {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #999;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.form-check-label {
+    font-size: 0.85rem;
+    cursor: pointer;
 }
