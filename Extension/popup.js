@@ -1,116 +1,143 @@
-(async () => {
-    document.addEventListener('DOMContentLoaded', async function () {
-        const offsetSelect = document.getElementById('offset');
-        const fromInput = document.getElementById('fromInput');
-        const toInput = document.getElementById('toInput');
-        const xInput = document.getElementById('xInput');
-        const zInput = document.getElementById('zInput');
-        let fromOffset = document.getElementById('fromOffset');
-        let toOffset = document.getElementById('toOffset');
-        let xOffset = document.getElementById('xOffset');
-        let zOffset = document.getElementById('zOffset');
-        const body = document.body;
+const api = typeof chrome !== 'undefined' ? chrome : browser;
 
-        // 載入並設定儲存的資料
-        async function loadStoredData() {
-            const storageData = await chrome.storage.sync.get([
-                'xInput', 'zInput', 'offset', 'fromInput', 'toInput'
-            ]);
+document.addEventListener('DOMContentLoaded', function () {
+    const el = (id) => document.getElementById(id);
+    const controls = {
+        offset: el('offset'),
+        fromInput: el('fromInput'), toInput: el('toInput'),
+        xInput: el('xInput'), zInput: el('zInput'),
+        fromOffset: el('fromOffset'), toOffset: el('toOffset'),
+        xOffset: el('xOffset'), zOffset: el('zOffset'),
+        prefixSlash: el('prefixSlash'), prefixTpll: el('prefixTpll'), prefixNone: el('prefixNone'),
+        includeElev: el('includeElev'), applyDistortion: el('applyDistortion'),
+        distortionWrap: el('distortionWrap')
+    };
 
-            // 設定頁面顯示的初始值
-            xOffset.value = storageData.xInput || '';
-            zOffset.value = storageData.zInput || '';
-            offsetSelect.value = storageData.offset || 'none';
+    // 載入儲存的資料並初始化介面
+    async function load() {
+        const data = await api.storage.sync.get([
+            'xInput', 'zInput', 'offset', 'fromInput', 'toInput', 'prefix', 'includeElev', 'applyDistortion'
+        ]);
 
-            const fromInputTemp = storageData.fromInput || '';
-            fromOffset.value = Array.isArray(fromInputTemp) ? fromInputTemp.join(',') : '';
+        controls.xOffset.value = data.xInput || '';
+        controls.zOffset.value = data.zInput || '';
+        controls.offset.value = data.offset || 'none';
 
-            const toInputTemp = storageData.toInput || '';
-            toOffset.value = Array.isArray(toInputTemp) ? toInputTemp.join(',') : '';
-        }
+        const fIn = data.fromInput || '';
+        controls.fromOffset.value = Array.isArray(fIn) ? fIn.join(',') : '';
+        
+        const tIn = data.toInput || '';
+        controls.toOffset.value = Array.isArray(tIn) ? tIn.join(',') : '';
 
-        // 載入儲存的資料並更新頁面
-        await loadStoredData();
+        if (data.prefix === 'none') controls.prefixNone.checked = true;
+        else if (data.prefix === 'tpll') controls.prefixTpll.checked = true;
+        else controls.prefixSlash.checked = true;
 
-        // 控制顯示輸入框的顯示邏輯
-        function toggleInputs() {
-            const offsetValue = offsetSelect.value;
-            if (offsetValue === 'none') {
-                fromInput.style.display = 'none';
-                toInput.style.display = 'none';
-                xInput.style.display = 'none';
-                zInput.style.display = 'none';
-                body.style.height = '190px'; // 隱藏時縮小頁面高度
-            } else if (offsetValue === 'latlon') {
-                fromInput.style.display = 'flex';
-                toInput.style.display = 'flex';
-                xInput.style.display = 'none';
-                zInput.style.display = 'none';
-                body.style.height = '300px'; // 顯示時擴大頁面高度
-            } else if (offsetValue === 'btexz') {
-                fromInput.style.display = 'none';
-                toInput.style.display = 'none';
-                xInput.style.display = 'flex';
-                zInput.style.display = 'flex';
-                body.style.height = '300px'; // 顯示時擴大頁面高度
-            }
-        }
+        controls.includeElev.checked = !!data.includeElev;
+        controls.applyDistortion.checked = !!data.applyDistortion;
 
-        // 儲存 offset 設定
-        offsetSelect.addEventListener('change', async function () {
-            const selectedOffset = offsetSelect.value;
-            chrome.storage.sync.set({ offset: selectedOffset });
-            toggleInputs(); // 更新輸入框顯示邏輯
-        });
-
-        // 儲存 X 和 Z 的輸入值
-        xOffset.addEventListener('input', async function (e) {
-            chrome.storage.sync.set({ xInput: Number(e.target.value) });
-        });
-
-        zOffset.addEventListener('input', async function (e) {
-            chrome.storage.sync.set({ zInput: Number(e.target.value) });
-        });
-
-        // 儲存 from 和 to 的座標值
-        fromOffset.addEventListener('input', async function (e) {
-            chrome.storage.sync.set({ fromInput: e.target.value.split(',').map(Number) });
-        });
-
-        toOffset.addEventListener('input', async function (e) {
-            chrome.storage.sync.set({ toInput: e.target.value.split(',').map(Number) });
-        });
-
-        // 清除資料的邏輯
-        function clearData(inputElement, storageKey) {
-            // 清除輸入框的資料
-            inputElement.value = '';
-
-            // 更新存儲中的值為空
-            chrome.storage.sync.set({ [storageKey]: '' });
-        }
-
-        // 綁定清除按鈕
-        const clearButtons = document.querySelectorAll('.clear-btn');
-        clearButtons.forEach(button => {
-            button.addEventListener('click', function () {
-                const inputId = this.getAttribute('data-clear');
-                const inputElement = document.getElementById(inputId);
-
-                // 根據 data-clear 屬性選擇清除的資料
-                if (inputElement === fromOffset) {
-                    clearData(fromOffset, 'fromInput');
-                } else if (inputElement === toOffset) {
-                    clearData(toOffset, 'toInput');
-                } else if (inputElement === xOffset) {
-                    clearData(xOffset, 'xInput');
-                } else if (inputElement === zOffset) {
-                    clearData(zOffset, 'zInput');
-                }
-            });
-        });
-
-        // 初始設置，根據存儲的選項來設定顯示
+        updateElevUI();
         toggleInputs();
+        updatePreview();
+    }
+
+    // 控制輸入框顯示邏輯
+    function toggleInputs() {
+        const val = controls.offset.value;
+        controls.fromInput.style.display = (val === 'latlon') ? 'flex' : 'none';
+        controls.toInput.style.display = (val === 'latlon') ? 'flex' : 'none';
+        controls.xInput.style.display = (val === 'btexz') ? 'flex' : 'none';
+        controls.zInput.style.display = (val === 'btexz') ? 'flex' : 'none';
+    }
+
+    // 控制高度相依 UI
+    function updateElevUI() {
+        const enabled = controls.includeElev.checked;
+        controls.distortionWrap.style.opacity = enabled ? "1" : "0.4";
+        controls.distortionWrap.style.pointerEvents = enabled ? "auto" : "none";
+        if (!enabled) {
+            controls.applyDistortion.checked = false;
+            api.storage.sync.set({ applyDistortion: false });
+        }
+    }
+
+    // 更新預覽文字
+    function updatePreview() {
+        const prefixEl = document.querySelector('input[name="prefix"]:checked');
+        const prefix = prefixEl ? prefixEl.value : 'slash';
+        const includeElev = controls.includeElev.checked;
+        const applyDist = controls.applyDistortion.checked;
+
+        // 預覽用的模擬數值
+        let lat = 25.033668, lon = 121.564816, elev = 516, ground = 8;
+
+        let res = "";
+        if (prefix === 'slash') res += "/tpll ";
+        else if (prefix === 'tpll') res += "tpll ";
+
+        res += `${lat} ${lon}`;
+
+        if (includeElev) {
+            let finalElev = elev;
+            if (applyDist) finalElev = Math.round((elev - ground) * 1.087 + ground);
+            res += ` ${finalElev}`;
+        }
+
+        document.getElementById('livePreview').textContent = res;
+    }
+
+    // 監聽各項變動並儲存
+    controls.offset.addEventListener('change', () => {
+        api.storage.sync.set({ offset: controls.offset.value });
+        toggleInputs();
+        updatePreview();
     });
-})();
+
+    document.querySelectorAll('input[name="prefix"]').forEach(r => {
+        r.addEventListener('change', (e) => {
+            api.storage.sync.set({ prefix: e.target.value });
+            updatePreview();
+        });
+    });
+
+    controls.includeElev.addEventListener('change', (e) => {
+        api.storage.sync.set({ includeElev: e.target.checked });
+        updateElevUI();
+        updatePreview();
+    });
+
+    controls.applyDistortion.addEventListener('change', (e) => {
+        api.storage.sync.set({ applyDistortion: e.target.checked });
+        updatePreview();
+    });
+
+    // 座標偏移輸入監聽
+    ['xOffset', 'zOffset', 'fromOffset', 'toOffset'].forEach(id => {
+        const input = el(id);
+        input.addEventListener('input', (e) => {
+            const key = id.replace('Offset', 'Input');
+            let val = e.target.value;
+            if (id.startsWith('x') || id.startsWith('z')) {
+                val = Number(val);
+            } else {
+                val = val.split(',').map(Number);
+            }
+            api.storage.sync.set({ [key]: val });
+            updatePreview();
+        });
+    });
+
+    // 清除按鈕邏輯
+    document.querySelectorAll('.clear-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const id = this.getAttribute('data-clear');
+            const input = el(id);
+            input.value = '';
+            const key = id.replace('Offset', 'Input');
+            api.storage.sync.set({ [key]: '' });
+            updatePreview();
+        });
+    });
+
+    load();
+});
