@@ -1,219 +1,363 @@
-const hostname = window.location.hostname;
-const siteInfo = getSiteInfo(hostname);
+/**
+ * CoordExtractor Console 指令
+ * 功能：擷取當前頁面座標並複製到剪貼簿
+ * 使用方式：直接將此檔案內容貼上瀏覽器 Console
+ */
+(function () {
+    // --- 1. 核心轉換與配置 ---
+    // --- 0. 測試環境設定 (模擬擴充功能 Popup 設定) ---
+    const TEST_SETTINGS = {
+        includeElev: true,      // 是否包含高度
+        ground: 0,              // 基準地面高度 (Alt+G 會更新此值)
+        offset: 0               // 額外偏移高度
+    };
 
-if (siteInfo.ifframe) {
-    // 確保 frame 元素存在
-    const frameElement = document.getElementsByTagName(siteInfo.ifframe[0])[0];
-
-    if (frameElement) {
-        try {
-            // 直接訪問 frame 的 contentDocument
-            const frameDoc = frameElement.contentDocument;
-
-            // 確保 frame 內部文檔存在
-            if (frameDoc) {
-                // 先綁定 keydown 事件
-                frameDoc.addEventListener('keydown', (event) => handleKeydown(event, siteInfo));
-                console.log('Keydown event listener added to frame.');
+    // --- 0.1 注入 UI 樣式 ---
+    function injectStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+            .ce-height-outer {
+                position: fixed;
+                bottom: 100px;
+                right: 20px;
+                z-index: 10000;
+                width: auto;
+                background: rgba(255, 255, 255, 0.8);
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                padding: 6px;
             }
-        } catch (e) {
-            console.error('Cannot access frame content:', e);
-        }
+            .ce-height-inner { display: flex; flex-direction: column; gap: 3px; }
+            .ce-height-title { font-size: 0.7rem; font-weight: bold; color: #0d6efd; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 2px; margin-bottom: 3px; text-align: center; }
+            .ce-height-fields { display: flex; gap: 5px; }
+            .ce-height-row { display: flex; flex-direction: column; flex: 1; align-items: center; }
+            .ce-height-label { font-size: 0.65rem; color: #666; margin-bottom: 1px; text-align: center; }
+            .ce-height-input { width: 50px; padding: 2px 4px; font-size: 0.8rem; border: 1px solid #ddd; border-radius: 4px; outline: none; text-align: right; }
+            .ce-height-input:focus { border-color: #0d6efd; }
+        `;
+        document.head.appendChild(style);
     }
-} else {
-    document.addEventListener('keydown', (event) => handleKeydown(event, siteInfo), true);
-}
+    injectStyles();
 
-// Handle keyboard event for Alt + C
-function handleKeydown(event, siteInfo) {
-    if (event.altKey && event.key === 'c') {
-        // 使用判斷網站的函數來獲取當前網站的元素選擇器和座標解析邏輯
-        if (siteInfo && typeof siteInfo.processCoordinates === 'function') {
-            // 擷取 WGS84 經緯度文本並顯示
-            const coordinatesText = getCoordinatesText(siteInfo.ifframe, siteInfo.shadow, siteInfo.selector, siteInfo.ifinnerText);
-            // 嘗試解析座標並處理
-            if (coordinatesText) {
-                processClipboardText(coordinatesText, siteInfo);  // 使用 processClipboardText 處理座標
-            } else {
-                console.error(`Coordinates element not found for ${siteInfo.name}.`);
+    const geo_utils = {
+        toRadians: (d) => d * Math.PI / 180,
+        toDegrees: (r) => r * 180 / Math.PI,
+        TWD97toWGS84(coord97) {
+            let easting = coord97.x, northing = coord97.y;
+            let relativeX = easting - 250000, long0 = this.toRadians(121), k0 = 0.9999;
+            let Equatorial_Radius = 6378137, Flattening = 1 / 298.257222101;
+            let e_abf = Math.sqrt(Flattening * (2 - Flattening)), e_2 = e_abf * e_abf;
+            let Meridional_Arc = northing / k0;
+            let mu = Meridional_Arc / Equatorial_Radius / (1 - e_2 / 4 - 3 * (e_2 ** 2) / 64 - 5 * (e_2 ** 3) / 256);
+            let e1 = Flattening / (2 - Flattening);
+            let J1 = (1.5 * e1 - 27 / 32 * e1 ** 3);
+            let J2 = (21 / 16 * e1 ** 2 - 55 / 32 * e1 ** 4);
+            let J3 = (151 / 96 * e1 ** 3);
+            let J4 = (1097 / 512 * e1 ** 4);
+            let fp = mu + J1 * Math.sin(2 * mu) + J2 * Math.sin(4 * mu) + J3 * Math.sin(6 * mu) + J4 * Math.sin(8 * mu);
+            let ee2 = e_2 / (1 - e_2);
+            let C1 = ee2 * Math.cos(fp) ** 2, T1 = Math.tan(fp) ** 2;
+            let ess = Math.sqrt(1 - e_2 * Math.sin(fp) ** 2), N1 = Equatorial_Radius / ess, R1 = Equatorial_Radius * (1 - e_2) / ess ** 3;
+            let D = relativeX / N1 / k0;
+            let latR = fp - (N1 * Math.tan(fp) / R1) * (D ** 2 / 2 - (5 + 3 * T1 + 10 * C1 - 4 * C1 ** 2 - 9 * ee2) * D ** 4 / 24);
+            let lonR = long0 + (D - (1 + 2 * T1 + C1) * D ** 3 / 6 + (5 - 2 * C1 + 28 * T1 - 3 * C1 ** 2 + 8 * ee2 + 24 * T1 ** 2) * D ** 5 / 120) / Math.cos(fp);
+            return { lat: this.toDegrees(latR), lon: this.toDegrees(lonR) };
+        }
+    };
+
+    // --- 2. 座標處理邏輯 (對應 config.js) ---
+    function latlon(coordinatesText) {
+        const regex = /(\d+(?:\.\d+)?)(?:N)?[\s,]+(\d+(?:\.\d+)?)(?:E)?/;
+        const match = coordinatesText.match(regex);
+        if (match) {
+            return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
+        }
+        return null;
+    }
+
+    function lonlat(coordinatesText) {
+        // 預處理：移除中文字標籤、括號、度符號(°)與多餘空白
+        const clean = coordinatesText.replace(/[\[\]經緯度：:°\s]/g, ' ');
+        // 尋找兩個數值（支援整數或浮點數），第一個視為 Lon，第二個視為 Lat
+        const regex = /(-?\d+(?:\.\d+)?).*?(-?\d+(?:\.\d+)?)/;
+        const match = clean.match(regex);
+        if (match) {
+            return { lon: parseFloat(match[1]), lat: parseFloat(match[2]) };
+        }
+        return null;
+    }
+
+    function genericTWD97(coordinatesText) {
+        // 預處理：將緊黏著數字的 X97, Y97, TWD97 替換為空白，強制把它們與真正的座標值隔開
+        const preprocessed = coordinatesText.replace(/(TWD97|X97|Y97|X:|Y:)/gi, ' ');
+        // TWD97 座標(公尺)至少為五位數(X通常十萬起跳，Y百萬起跳)
+        // 加上 (?:^|[^\d.]) 邊界判斷，防止誤抓小數點後面的數字 (如 120.313112 的 313112)
+        const regex = /(?:^|[^\d.])(-?\d{5,}(?:\.\d+)?).*?(?:^|[^\d.])(-?\d{5,}(?:\.\d+)?)/;
+        const match = preprocessed.match(regex);
+        if (match) {
+            const x = parseFloat(match[1]);
+            const y = parseFloat(match[2]);
+            if (!isNaN(x) && !isNaN(y)) {
+                return geo_utils.TWD97toWGS84({ x, y });
             }
+        }
+        return null;
+    }
+
+    function googleEarthOnLoad() {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            const btn = document.querySelector('flt-semantics-placeholder[aria-label="Enable accessibility"]');
+            if (btn) {
+                btn.click();
+                clearInterval(interval);
+            }
+            if (++attempts > 10) clearInterval(interval);
+        }, 500);
+    }
+
+    function googleEarthExtractor(root) {
+        const nodes = root.querySelectorAll('flt-semantics');
+        const screenHeight = window.innerHeight;
+        const screenWidth = window.innerWidth;
+        const targetNodes = Array.from(nodes).filter(node => {
+            const rect = node.getBoundingClientRect();
+            return rect.bottom > screenHeight - 50 &&
+                rect.right > screenWidth - 200 &&
+                rect.width > 10 &&
+                rect.height < 30 &&
+                Array.from(node.querySelectorAll('span')).some(span => span.textContent.trim().length > 0) &&
+                !node.querySelector('flt-semantics');
+        });
+
+        if (targetNodes.length > 0) {
+            // 抓取座標文字與高度文字
+            const latlonSpan = targetNodes[0].querySelector('span');
+            const elevSpan = targetNodes.length > 1 ? targetNodes[1].querySelector('span') : null;
+
+            const latlonText = latlonSpan ? latlonSpan.textContent.trim() : "";
+            const elevText = elevSpan ? elevSpan.textContent.trim() : "";
+
+            // 將兩者組合回傳，由 processCoordinates 進行拆解
+            return latlonText + (elevText ? " | " + elevText : "");
+        }
+        return null;
+    }
+
+    function googleEarthCoordinates(text) {
+        const parts = text.split(' | ');
+        const latlonText = parts[0];
+        const elevText = parts.length > 1 ? parts[1] : "";
+
+        // 解析高度資訊
+        let elev = null;
+        if (elevText) {
+            const elevMatch = elevText.match(/-?\d+(?:\.\d+)?/);
+            if (elevMatch) {
+                elev = parseFloat(elevMatch[0]);
+            }
+        }
+
+        // 解析緯度 (N/S) 與經度 (E/W) 支援 十進位度數、度分、度分秒
+        const latRegex = /(\d+(?:\.\d+)?)°\s*(?:(\d+(?:\.\d+)?)')?\s*(?:(\d+(?:\.\d+)?)[”"″])?\s*([NS])/i;
+        const lonRegex = /(\d+(?:\.\d+)?)°\s*(?:(\d+(?:\.\d+)?)')?\s*(?:(\d+(?:\.\d+)?)[”"″])?\s*([EW])/i;
+
+        const latMatch = latlonText.match(latRegex);
+        const lonMatch = latlonText.match(lonRegex);
+
+        if (latMatch && lonMatch) {
+            const parseDMS = (m) => {
+                let deg = parseFloat(m[1] || 0);
+                let min = parseFloat(m[2] || 0);
+                let sec = parseFloat(m[3] || 0);
+                let dir = m[4].toUpperCase();
+                let decimal = deg + (min / 60) + (sec / 3600);
+                return (dir === 'S' || dir === 'W') ? -decimal : decimal;
+            };
+            return { lat: parseDMS(latMatch), lon: parseDMS(lonMatch), elev: elev };
+        }
+
+        // 若未符合 N/S/E/W 格式，退回純數字提取 (預設前緯後經)
+        let latSign = latlonText.includes('S') ? -1 : 1;
+        let lonSign = latlonText.includes('W') ? -1 : 1;
+        const clean = latlonText.replace(/[^0-9.\-]/g, ' ').trim();
+        const fallbackRegex = /(-?\d+(?:\.\d+)?).*?(-?\d+(?:\.\d+)?)/;
+        const fallbackMatch = clean.match(fallbackRegex);
+        if (fallbackMatch) {
+            return { lat: parseFloat(fallbackMatch[1]) * latSign, lon: parseFloat(fallbackMatch[2]) * lonSign, elev: elev };
+        }
+
+        return null;
+    }
+
+    function gismap(coordinatesText) {
+        const regex = /X:(-?\d+\.\d+)\s*Y:(-?\d+\.\d+)/;
+        const match = coordinatesText.match(regex);
+        if (!match) return null;
+
+        const x = parseFloat(match[1]);
+        const y = parseFloat(match[2]);
+        if (isNaN(x) || isNaN(y)) return null;
+
+        if (coordinatesText.includes('97AUTO:121分帶') || coordinatesText.includes('97二度121') || coordinatesText.includes('TWD97 二度分帶')) {
+            return geo_utils.TWD97toWGS84({ x, y });
+        } else if (coordinatesText.includes('WGS84經緯度')) {
+            return { lon: x, lat: y };
         } else {
-            console.error(`No valid processCoordinates function found for ${hostname}.`);
+            console.warn('Unsupported coordinate format on this GIS map.');
         }
+        return null;
     }
-}
 
-// Process clipboard text and handle coordinates
-function processClipboardText(text, siteInfo) {
-    const parsedCoord = Array.isArray(text)
-	    ? siteInfo.processCoordinates(text)
-	    : siteInfo.processCoordinates(text.replace(/[\u200E\u200F]/g, ''));
-    
-    if (parsedCoord) {
-        copyCoordinates(parsedCoord);
-    } else {
-        console.error(`Unable to parse coordinates from ${siteInfo.name}.`);
-    }
-}
-
-// 判斷當前網站並返回相關資訊的函數
-function getSiteInfo(hostname) {
-    const sites = {
+    // --- 3. 網站配置字典 ---
+    const sites_config = {
+        'earth.google.com': {
+            name: 'Google Earth Web',
+            onLoad: googleEarthOnLoad,
+            customExtractor: googleEarthExtractor,
+            processCoordinates: googleEarthCoordinates,
+            height: true
+        },
         'www.google.com': {
             name: 'Google Maps',
             copier: '.fxNQSd',
-            processCoordinates: latlon,
+            processCoordinates: latlon
         },
         'www.bing.com': {
             name: 'Bing Maps',
             selector: ['span.alwaysLtr_CVy2G'],
             copier: '.secTextLink[data-tag="secTextLink"]',
-            processCoordinates: latlon,
+            processCoordinates: latlon
         },
         'yandex.com': {
             name: 'Yandex Maps',
             selector: ['.toponym-card-title-view__coords-badge'],
             copier: '.clipboard__help',
-            processCoordinates: latlon,
+            processCoordinates: latlon
         },
         'maps.nlsc.gov.tw': {
             name: 'Taiwan Map Service',
             selector: ['.ol-mouse-position'],
             ifinnerText: true,
-            processCoordinates: lonlat,
+            processCoordinates: lonlat
         },
         '3dmaps.nlsc.gov.tw': {
             name: 'Taiwan 3D Map Service',
-			ifframe: ['frame', 0],
+            ifframe: ['frame', 0],
             selector: ['.pg-TableType1RightContent', [5, 4]],
-            processCoordinates: TWD97XY,
+            processCoordinates: genericTWD97
         },
         'gis.ardswc.gov.tw': {
             name: 'BigGIS',
             selector: ['#Cursor_Coord'],
-            processCoordinates: latlon,
+            processCoordinates: latlon
         },
         'ysnp.3dgis.tw': {
             name: 'Yushan National Park',
             ifframe: ['iframe', 0],
             selector: ['#statusbar'],
             ifinnerText: true,
-            processCoordinates: yushanCoordinates,
+            processCoordinates: lonlat
         },
         '3dmap.ymsnp.gov.tw': {
             name: 'Yangmingshan National Park',
             selector: ['#coord'],
             ifinnerText: true,
-            processCoordinates: lonlat,
+            processCoordinates: lonlat
         },
         'urban.planning.ntpc.gov.tw': {
             name: 'Ntpc Urban and Rural Info',
             selector: ['.map-info-block.coord-twd97'],
-            processCoordinates: urplanning,
+            processCoordinates: genericTWD97
         },
         'urplanning.tycg.gov.tw': {
             name: 'Taoyuan GIS Map',
             selector: ['.map-info-block.coord-twd97'],
-            processCoordinates: urplanning,
+            processCoordinates: genericTWD97
         },
         'tymap.tycg.gov.tw': {
             name: 'Taoyuan Topomap',
             selector: ['.map-info-block.coord-twd97'],
-            processCoordinates: urplanning,
+            processCoordinates: genericTWD97
         },
         'gismap.taichung.gov.tw': {
             name: 'Taichung GIS Map',
             selector: ['td.omg-statusbar-footbar-btn.omg-statusbar-foot-mousePosition.ol-unselectable'],
-            processCoordinates: gismap,
+            processCoordinates: gismap
         },
         'gisdawh.kcg.gov.tw': {
             name: (function () {
                 const path = window.location.pathname;
-                if (path.includes('kcmap')) {
-                    // 高雄地圖網
-                    return 'Kaohsiung City Government I-MAP';
-                } else if (path.includes('landeasy')) {
-                    // 高雄地籍圖資服務網
-                    return 'Kaohsiung LandEasy';
-                }
+                if (path.includes('kcmap')) return 'Kaohsiung City Government I-MAP';
+                if (path.includes('landeasy')) return 'Kaohsiung LandEasy';
+                return 'Kaohsiung GIS';
             })(),
             selector: (function () {
                 const path = window.location.pathname;
-                if (path.includes('kcmap2')) {
-					// 高雄地圖網(新)
-					return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(12) > div.mousePosition > span > div'];
-				} else if (path.includes('kcmap')) {
-                    // 高雄地圖網
-                    return ['td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable'];
-                } else if (path.includes('landeasy2')) {
-                    // 高雄地籍圖資服務網(新)
-                    return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(37) > div.mousePosition > span > div'];
-                }else if (path.includes('landeasy')) {
-                    // 高雄地籍圖資服務網
-                    return ['#mouseInfo'];
-                }
+                // 高雄地圖網(舊版)
+                if (path.includes('kcmap2')) return ['td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable'];
+                // 高雄地圖網
+                if (path.includes('kcmap')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(12) > div.mousePosition > span > div'];
+                // 高雄地籍圖資服務網(舊版)
+                if (path.includes('landeasy/page.cfm')) return ['#mouseInfo'];
+                // 高雄地籍圖資服務網
+                if (path.includes('landeasy')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(37) > div.mousePosition > span > div'];
+                return [];
             })(),
             ifinnerText: (function () {
-				const path = window.location.pathname;
-				if (path.includes('kcmap2')) {
-				    return true;
-				} else if (path.includes('landeasy2')) {
-				    return true;
-				}
+                const path = window.location.pathname;
+                // 高雄地圖網(舊版)
+                if (path.includes('kcmap2')) return false;
+                // 高雄地籍圖資服務網(舊版)
+                if (path.includes('landeasy/page.cfm')) return false;
+                return true;
             })(),
             processCoordinates: (function () {
                 const path = window.location.pathname;
-                if (path.includes('kcmap2')) {
-					// 高雄地圖網(新)
-                    return latlon;
-				} else if (path.includes('kcmap')) {
-                    // 高雄地圖網
-                    return gismap;
-                } else if (path.includes('landeasy2')) {
-                    // 高雄地籍圖資服務網(新)
-                    return latlon;
-                } else if (path.includes('landeasy')) {
-                    // 高雄地籍圖資服務網
-                    return landeasy;
-                }
+                // 高雄地圖網(舊版)
+                if (path.includes('kcmap2')) return gismap;
+                // 高雄地籍圖資服務網(舊版)
+                if (path.includes('landeasy/page.cfm')) return genericTWD97;
+                return latlon;
             })(),
         },
         'urbangis.kcg.gov.tw': {
             name: 'Kaohsiung Urban Planning MAP',
             selector: ['#txtX, #txtY'],
-            processCoordinates: TWD97XY,
+            processCoordinates: genericTWD97
         },
         'urbangis.hccg.gov.tw': {
             name: 'Hsinchu Urban Planning MAP',
             selector: ['small[data-v-79d61da6]', 1],
-            processCoordinates: urplanning,
+            processCoordinates: genericTWD97
         },
-		'3dgis.hccg.gov.tw': {
+        '3dgis.hccg.gov.tw': {
             name: 'Hsinchu Urban Planning 3D MAP',
             selector: ['div[data-v-f2982cfb]', 1],
-            processCoordinates: urplanning,
+            processCoordinates: genericTWD97
         },
-		'urbangis.chcg.gov.tw': {
+        'urbangis.chcg.gov.tw': {
             name: 'Changhua Urban Planning GIS MAP',
             selector: ['div.map-info-block.map-info-coord-block.coord-twd97'],
-            processCoordinates: urplanning,
+            processCoordinates: genericTWD97
         },
-		'map.yunlin.gov.tw': {
+        'map.yunlin.gov.tw': {
             name: 'Yunlin GIS MAP',
-			shadow: 'arcgis-coordinate-conversion',
-            selector: ['#arcgis-coordinate-conversion-list-item-0 > div'],
-			ifinnerText: true,
-            processCoordinates: lonlat,
+            shadow: 'arcgis-coordinate-conversion',
+            selector: ['div.result-accordion__row', -1],
+            processCoordinates: genericTWD97
         },
         'nsp.tcd.gov.tw': {
             name: 'Pingtung GIS MAP',
             selector: ['#info'],
-            processCoordinates: pingtunggis,
+            processCoordinates: genericTWD97
         },
         'map.taitung.gov.tw': {
             name: 'Taitung Map',
             selector: ['td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable'],
-            processCoordinates: gismap,
+            processCoordinates: gismap
         },
         'map.hl.gov.tw': {
             name: 'Hualien GIS Map',
@@ -221,241 +365,229 @@ function getSiteInfo(hostname) {
             selector: ['#twd97'],
             ifinnerText: true,
             copier: '#twd97Status',
-            processCoordinates: TWD97UTM,
+            processCoordinates: genericTWD97
         },
         'upgis.klcg.gov.tw': {
             name: 'Keelung Urban Planning GIS',
-			ifframe: ['frame', 2],
+            ifframe: ['frame', 2],
             selector: ['#coordShow'],
             ifinnerText: true,
-            processCoordinates: keelunggis,
+            processCoordinates: genericTWD97
         },
         'urban.kinmen.gov.tw': {
             name: 'Kinmen Map Service',
-            selector: ['#info a:nth-of-type(2)'], // 查找包含 WGS84 經緯度的 <a> 標籤
-            processCoordinates: lonlat,
+            selector: ['#info a:nth-of-type(2)'],
+            processCoordinates: lonlat
         },
     };
 
-    const siteInfo = sites[hostname];
-    if (!siteInfo) {
-        console.error('This website is not supported. Please check the site name.');
-    }
-    return siteInfo || null; // 如果網站不存在於列表中，返回 null
-}
-
-// 根據選擇器獲取座標文本的函數
-function getCoordinatesText(ifframe, selector, ifinnerText) {
-    // 根據是否有 ifframe 或 shadow，選擇適當的元素
-    const elements = ifframe 
-        ? document.getElementsByTagName(ifframe[0])[ifframe[1]].contentDocument.querySelectorAll(selector[0])
-        : shadow
-		    ? document.querySelector(shadow).shadowRoot.querySelectorAll(selector[0])
-			: document.querySelectorAll(selector[0]);
-    
-    if (elements.length === 0) {
-        console.error(`No elements found for selector: ${selector}`);
-        return null;
-    }
-
-    // 如果 selector[1] 存在，處理多選擇器的情況
-    if (selector[1]) {
-        if (Array.isArray(selector[1])) {
-            // 如果 selector[1] 是一個陣列，選取對應的多個元素
-            return selector[1].map(index => elements[index].textContent.trim());
+    // --- 4. 測試執行邏輯 ---
+    function getCoordinatesText(info) {
+        let root = document;
+        if (info.ifframe) {
+            const [tag, idx] = info.ifframe;
+            root = document.getElementsByTagName(tag)[idx]?.contentDocument || document;
+        } else if (info.shadow) {
+            root = document.querySelector(info.shadow)?.shadowRoot || document;
         }
-        // 否則返回單個指定索引的元素
-        return elements[selector[1]].textContent;
+
+        if (info.customExtractor) {
+            return info.customExtractor(root);
+        }
+
+        const selectors = info.selector;
+        if (!selectors) return null;
+
+        const elements = root.querySelectorAll(selectors[0]);
+        if (elements.length === 0) return null;
+
+        if (selectors[1] !== undefined) {
+            if (Array.isArray(selectors[1])) {
+                return selectors[1].map(i => {
+                    const idx = i < 0 ? elements.length + i : i;
+                    return elements[idx]?.textContent.trim();
+                }).join(' ');
+            }
+            const i = selectors[1];
+            const idx = i < 0 ? elements.length + i : i;
+            return elements[idx]?.textContent.trim();
+        }
+
+        if (info.ifinnerText) {
+            return elements[0].innerText.trim();
+        }
+
+        return elements.length === 1
+            ? elements[0].textContent.trim()
+            : Array.from(elements).map(el => el.textContent.trim()).join(' ');
     }
 
-    // 根據 ifinnerText 標識選擇不同的文本處理
-    if (ifinnerText) {
-        return elements[0].innerText;
+    function handleSetGround() {
+        const host = window.location.hostname;
+        const config = sites_config[host];
+        if (!config) return;
+
+        const text = getCoordinatesText(config);
+        if (!text) return;
+        const cleanText = text.replace(/[\u200E\u200F]/g, '');
+        const result = config.processCoordinates(cleanText);
+
+        if (result && result.elev !== undefined && result.elev !== null) {
+            const ground = Math.round(result.elev);
+            TEST_SETTINGS.ground = ground;
+
+            // 更新 UI
+            const groundInput = document.getElementById('ce-ground');
+            if (groundInput) groundInput.value = ground;
+
+            console.log(`%c[CoordExtractor] 已更新基準地面高度 (Ground): ${ground}m`, 'color: #ff00ff; font-weight: bold;');
+        }
     }
 
-    // 返回單一或多個元素的文本內容
-    return elements.length === 1
-        ? elements[0].textContent.trim()  // 單個元素
-        : Array.from(elements).map(el => el.textContent.trim());  // 多個元素
-}
+    function initHeightUI(config) {
+        if (!config || !config.height) return;
+        if (document.querySelector('.ce-height-outer')) return;
 
-// 解析 TWD97 XY 座標獨立格式的函數
-function TWD97XY(coordinatesText) {
-    const coordText = { x: parseFloat(coordinatesText[0]), y: parseFloat(coordinatesText[1]) };
-    return coordText ? TWD97toWGS84(coordText) : null;
-}
+        const outer = document.createElement('div');
+        outer.className = 'ce-height-outer';
 
-// LonLat 通用解析經緯度座標的函數
-function parseLonLat(coordinatesText, regex) {
-    const match = coordinatesText.match(regex);
-    if (match) {
-        return { lon: parseFloat(match[1]), lat: parseFloat(match[2]) };
+        const inner = document.createElement('div');
+        inner.className = 'ce-height-inner';
+
+        const title = document.createElement('div');
+        title.className = 'ce-height-title';
+        title.innerText = 'Elevation Settings';
+
+        const createRow = (labelStr, id, defaultVal) => {
+            const row = document.createElement('div');
+            row.className = 'ce-height-row';
+            const label = document.createElement('label');
+            label.className = 'ce-height-label';
+            label.innerText = labelStr;
+            const input = document.createElement('input');
+            input.className = 'ce-height-input';
+            input.type = 'number';
+            input.id = id;
+            input.value = defaultVal;
+            row.appendChild(label);
+            row.appendChild(input);
+            return row;
+        };
+
+        const groundRow = createRow('Ground (m)', 'ce-ground', TEST_SETTINGS.ground);
+        const offsetRow = createRow('Offset (m)', 'ce-offset', TEST_SETTINGS.offset);
+
+        const fields = document.createElement('div');
+        fields.className = 'ce-height-fields';
+        fields.appendChild(groundRow);
+        fields.appendChild(offsetRow);
+
+        inner.appendChild(title);
+        inner.appendChild(fields);
+        outer.appendChild(inner);
+        document.body.appendChild(outer);
     }
-    return null;
-}
 
-// 解析經緯座標格式的函數
-function latlon(coordinatesText) {
-    const regex = /(\d+(?:\.\d+)?)(?:N)?[\s,]+(\d+(?:\.\d+)?)(?:E)?/;
-    const match = coordinatesText.match(regex);
+    function runTest() {
+        const host = window.location.hostname;
+        const config = sites_config[host];
+        if (!config) {
+            console.error(`[CoordExtractor] 此網站 (${host}) 尚未在腳本中定義。`);
+            return;
+        }
 
-    if (match) {
-        return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
+        const text = getCoordinatesText(config);
+        if (!text) {
+            console.error(`[CoordExtractor] 找不到元素或無法擷取文字。`);
+            return;
+        }
+
+        // --- 強制輸出原始擷取到的文字，方便除錯 ---
+        console.log(`%c[CoordExtractor Raw Text] 擷取到的原始文字:`, 'color: #ff9900; font-weight: bold;', text);
+
+        const cleanText = text.replace(/[\u200E\u200F]/g, '');
+        const result = config.processCoordinates(cleanText);
+
+        if (result) {
+            // 從 UI 讀取最新數值
+            const uiGround = parseFloat(document.getElementById('ce-ground')?.value || TEST_SETTINGS.ground);
+            const uiOffset = parseFloat(document.getElementById('ce-offset')?.value || TEST_SETTINGS.offset);
+
+            let baseElev = result.elev || 0;
+            let processedElev = baseElev;
+            let finalElev = baseElev;
+            let note = "";
+
+            if (TEST_SETTINGS.includeElev && result.elev !== undefined) {
+                finalElev = Math.round(baseElev + uiOffset);
+                note = ` (高度: ${finalElev}m, Offset: ${uiOffset}m)`;
+            }
+
+            // 格式化輸出
+            let outputParts = [];
+            outputParts.push(result.lat);
+            outputParts.push(result.lon);
+
+            if (TEST_SETTINGS.includeElev && result.elev !== undefined) {
+                outputParts.push(finalElev);
+            }
+
+            const output = outputParts.join(' ');
+            console.log(`%c[CoordExtractor] 成功擷取 (${config.name}): ${output}${note}`, 'color: #00ff00; font-weight: bold;');
+
+            // 使用標準 Clipboard API 寫入剪貼簿
+            navigator.clipboard.writeText(output).then(() => {
+                alert(`網站：${config.name}\n結果：${output}\n${note}\n已複製到剪貼簿。`);
+            }).catch(err => {
+                console.error('[CoordExtractor] 無法寫入剪貼簿:', err);
+                alert(`網站：${config.name}\n結果：${output}\n(請手動複製，因剪貼簿權限受限)`);
+            });
+        } else {
+            console.error(`[CoordExtractor] 座標解析失敗。擷取到的文字為:`, text);
+        }
     }
-    return null;
-}
 
-function lonlat(coordinatesText) {
-    const regex = /(-?\d+\.\d+)\s*°?\s*,\s*(-?\d+\.\d+)\s*°?/;
-    return parseLonLat(coordinatesText, regex);
-}
+    // 綁定鍵盤事件
+    window.addEventListener('keydown', (e) => {
+        if (e.altKey) {
+            if (e.key.toLowerCase() === 'c') runTest();
+            if (e.key.toLowerCase() === 'g') handleSetGround();
+        }
+    }, { capture: true });
 
-// 玉山國家公園的座標解析函數
-function yushanCoordinates(coordinatesText) {
-    const regex = /\[經度\]：\s*(-?\d+\.\d+)\s+\[緯度\]：\s*(-?\d+\.\d+)/;
-    return parseLonLat(coordinatesText, regex);
-}
-
-// TWD97 通用解析座標函數
-function parseTWD97Coordinates(coordinatesText, regex) {
-    const match = coordinatesText.match(regex);
-    if (match) {
-        const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
-        return TWD97toWGS84(coordText);
+    // 若有 iframe，也在 iframe 內綁定
+    const host = window.location.hostname;
+    const config = sites_config[host];
+    if (config && config.ifframe) {
+        const [tagName, index] = config.ifframe;
+        const frame = document.getElementsByTagName(tagName)[index];
+        if (frame) {
+            const attachListener = () => {
+                try {
+                    const frameDoc = frame.contentDocument;
+                    if (frameDoc) {
+                        frameDoc.addEventListener('keydown', (e) => {
+                            if (e.altKey) {
+                                if (e.key.toLowerCase() === 'c') runTest();
+                                if (e.key.toLowerCase() === 'g') handleSetGround();
+                            }
+                        }, { capture: true });
+                    }
+                } catch (e) { }
+            };
+            if (frame.contentDocument && frame.contentDocument.readyState === 'complete') {
+                attachListener();
+            } else {
+                frame.onload = attachListener;
+            }
+        }
     }
-    return null;
-}
 
-// 解析 TWD97 座標格式的函數
-function TWD97UTM(coordinatesText) {
-    const regex = /(\d+\.\d+)\s*,\s*(\d+\.\d+)/;
-    return parseTWD97Coordinates(coordinatesText, regex);
-}
-
-// 解析高雄地籍圖資服務網座標格式的函數
-function landeasy(coordinatesText) {
-    const regex = /\((\d+\.\d+)\s*,\s*(\d+\.\d+)\)/;
-    return parseTWD97Coordinates(coordinatesText, regex);
-}
-
-// 解析城鄉資訊相關平台座標格式的函數
-function urplanning(coordinatesText) {
-    const regex = /X97[:\s]*([0-9.]+)\s*[, ]*\s*Y97[:\s]*([0-9.]+)/;
-    return parseTWD97Coordinates(coordinatesText, regex);
-}
-
-// 解析屏東縣地理圖資整合系統座標格式的函數
-function pingtunggis(coordinatesText) {
-    const regex = /TWD97[:\s]*(-?\d+\.\d+),\s*(-?\d+\.\d+)/;
-    return parseTWD97Coordinates(coordinatesText, regex);
-}
-
-// 解析基隆市都市計畫書圖查詢座標格式的函數
-function keelunggis(coordinatesText) {
-    const regex = /\(TWD97\)[\s]*(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/;
-    return parseTWD97Coordinates(coordinatesText, regex);
-}
-
-// 解析 GIS 相關平台座標格式的函數
-function gismap(coordinatesText) {
-    const regex = /X:(-?\d+\.\d+)\s*Y:(-?\d+\.\d+)/;
-    const match = coordinatesText.match(regex);
-    const coordText = { x: parseFloat(match[1]), y: parseFloat(match[2]) };
-    // 檢查文本是否包含 "97二度121分帶"
-    if (coordinatesText.includes('97AUTO:121分帶') || coordinatesText.includes('97二度121') || coordinatesText.includes('TWD97 二度分帶')) {
-        return TWD97toWGS84(coordText);
-    // 檢查文本是否包含 "WGS84經緯度"
-    } else if (coordinatesText.includes('WGS84經緯度')) {
-        return { lon: coordText.x, lat: coordText.y };
-    // 不支援的格式
-    } else {
-        alert(
-            'The selected coordinates format are not supported. Please change the settings in the lower left corner.',
-        );
+    if (config && config.onLoad) {
+        config.onLoad();
     }
-    return null;
-}
 
-// 處理複製座標的邏輯
-function copyCoordinates(coord) {
-    let text = `${coord.lat}, ${coord.lon}`;
-    console.log("Current Coordinates (WGS84):", text);
+    initHeightUI(config);
 
-    // 將座標複製到剪貼簿
-    navigator.clipboard.writeText(text)
-        .then(() => {
-            alert(`Coordinates "${text}" copied to clipboard!`);
-        })
-        .catch(err => {
-            console.error('Failed to copy coordinates: ', err);
-        });
-};
-
-// Mathematical calculations
-function toRadians(degrees) {
-    return (degrees * Math.PI) / 180;
-}
-
-function toDegrees(radians) {
-    return (radians * 180) / Math.PI;
-}
-
-// TWD97 UTM to WGS84 Latitude and Longitude
-    /**
-     * CONVERTING UTM TO LATITUDE AND LONGITUDE (OR VICE VERSA)
-     * https://fypandroid.wordpress.com/2011/09/03/converting-utm-to-latitude-and-longitude-or-vice-versa/
-     *
-     * 測繪資訊成果供應管理系統(原內政部地政司衛星測量中心)
-     * https://gps.moi.gov.tw/sscenter/introduce/IntroducePage.aspx?Page=GPS9
-     */
-function TWD97toWGS84(coord97) {
-    // Symbols
-    let easting = coord97.x;
-    let relativeX = easting - 250000; // x (relative to the central meridian)
-    let northing = coord97.y;
-    let long0 = toRadians(121); // central meridian of zone
-    let k0 = 0.9999; // scale along long_0
-    let Equatorial_Radius = 6378137; // in meters
-    let Flattening = 1 / 298.257222101;
-    let e_abf = Math.sqrt(Flattening * (2 - Flattening));
-    let e_2 = e_abf * e_abf;
-    let e_4 = e_abf * e_abf * e_abf * e_abf;
-    let e_6 = e_abf * e_abf * e_abf * e_abf * e_abf * e_abf;
-    // Calculate the Meridional Arc
-    let Meridional_Arc = northing / k0;
-    // Calculate Footprint Latitude
-    let mu = Meridional_Arc / Equatorial_Radius / (1 - e_2 / 4 - 3 * e_4 / 64 - 5 * e_6 / 256);
-    let e1 = Flattening / (2 - Flattening);
-    let e1_2 = e1 * e1;
-    let e1_3 = e1 * e1 * e1;
-    let e1_4 = e1 * e1 * e1 * e1;
-    let J1 = (1.5 * e1 - 27 / 32 * e1_3);
-    let J2 = (21 / 16 * e1_2 - 55 / 32 * e1_4);
-    let J3 = (151 / 96 *e1_3);
-    let J4 = (1097 / 512 *e1_4);
-    let fp = mu + J1 * Math.sin(2 * mu) + J2 * Math.sin(4 * mu) + J3 * Math.sin(6 * mu) + J4 * Math.sin(8 * mu);
-    // Calculate Latitude and Longitude
-    let ee2 = e_2 / (1 - e_2);
-    let C1 = ee2 * Math.cos(fp) * ee2 * Math.cos(fp);
-    let C1_2 = C1 * C1;
-    let T1 = Math.tan(fp) * Math.tan(fp)
-    let T1_2 = T1 * T1;
-    let ess = Math.sqrt(1 - e_2 * Math.sin(fp) * Math.sin(fp));
-    let R1 = Equatorial_Radius * (1 - e_2) / ess / ess / ess;
-    let N1 = Equatorial_Radius / ess
-    let D = relativeX / N1 / k0;
-    let D_3 = D * D * D;
-    let D_4 = D * D * D * D;
-    let D_5 = D * D * D * D * D;
-    let D_6 = D * D * D * D * D * D;
-    let Q1 = N1 * Math.tan(fp) / R1;
-    let Q2 = D * D / 2;
-    let Q3 = (5 + 3 * T1 + 10 * C1 - 4 * C1_2 - 9 * ee2) * D_4 / 24;
-    let Q4 = (61 + 90 * T1 + 298 * C1 + 45 * T1_2 - 3 * C1_2 - 252 * ee2) * D_6 / 720;
-    let Q6 = (1 + 2 * T1 + C1) * D_3 / 6;
-    let Q7 = (5 - 2 * C1 + 28 * T1 - 3 * C1_2 + 8 * ee2 + 24 * T1_2) * D_5 / 120;
-    let latR = fp - Q1 * (Q2 - Q3 + Q4);
-    let lonR = long0 + (D - Q6 + Q7) / Math.cos(fp);
-    
-    return { lat: toDegrees(latR), lon: toDegrees(lonR) };
-}
+    console.log('%c[CoordExtractor] 指令腳本已載入。在頁面上按 Alt + C 擷取座標。', 'color: #00bfff; font-weight: bold;');
+})();
