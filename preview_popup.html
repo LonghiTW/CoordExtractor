@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Inlined styles.css */
+        body {
+            width: 360px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+            transition: height 0.3s ease;
+            background: #ffffff;
+        }
+
+        #fromInput,
+        #toInput,
+        #xInput,
+        #zInput {
+            display: none;
+        }
+
+        .form-label {
+            margin-bottom: 0rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #444;
+        }
+
+        .row {
+            margin-left: 0;
+            margin-right: 0;
+        }
+
+        .text-end {
+            text-align: right;
+        }
+
+        .col-3 {
+            padding-right: 10px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .col-9 {
+            padding-left: 0;
+        }
+
+        .form-select,
+        .form-control {
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .mb-3.row {
+            margin-bottom: 0.75rem !important;
+        }
+
+        .input-container {
+            position: relative;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
+            cursor: pointer;
+            color: #ccc;
+        }
+
+        .input-container:hover .clear-btn {
+            display: inline-block;
+        }
+
+        .clear-btn:hover {
+            color: #666;
+        }
+
+        h4 {
+            color: #0d6efd;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        p {
+            font-size: 0.8rem;
+            color: #777;
+            margin-bottom: 15px;
+        }
+
+        .settings-group {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            margin-bottom: 15px;
+        }
+
+        .btn-group-equal {
+            display: flex;
+            width: 100%;
+        }
+
+        .btn-group-equal .btn {
+            flex: 1;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #999;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .form-check-label {
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+    </style>
+    <title>CoordExtractor Preview</title>
+</head>
+
+<body>
+    <h4>CoordExtractor</h4>
+    <p>A coordinate extraction tool for map services.</p>
+
+    <!-- Live Preview Section -->
+    <div class="settings-group" style="background: #eef5ff; border-color: #cfe2ff;">
+        <div class="section-title" style="color: #0d6efd;">Live Preview</div>
+        <div id="livePreview"
+            style="font-family: 'Consolas', 'Monaco', monospace; font-size: 0.95rem; word-break: break-all; color: #0d6efd; padding: 8px; border: 1px dashed #0d6efd; border-radius: 6px; background: #fff; text-align: center; min-height: 40px; display: flex; align-items: center; justify-content: center;">
+            /tpll 25.033668 121.564816
+        </div>
+    </div>
+
+    <!-- Copy Format Section -->
+    <div class="settings-group">
+        <div class="section-title">Copy Format</div>
+        <div class="mb-2 row align-items-center">
+            <div class="col-3 text-end">
+                <label class="form-label">Prefix:</label>
+            </div>
+            <div class="col-9">
+                <div class="btn-group btn-group-sm btn-group-equal" role="group">
+                    <input type="radio" class="btn-check" name="prefix" id="prefixSlash" value="slash" checked>
+                    <label class="btn btn-outline-primary" for="prefixSlash">/tpll</label>
+                    <input type="radio" class="btn-check" name="prefix" id="prefixTpll" value="tpll">
+                    <label class="btn btn-outline-primary" for="prefixTpll">tpll</label>
+                    <input type="radio" class="btn-check" name="prefix" id="prefixNone" value="none">
+                    <label class="btn btn-outline-primary" for="prefixNone">None</label>
+                </div>
+            </div>
+        </div>
+        <div class="row align-items-center">
+            <div class="col-3 text-end">
+                <label class="form-label">Elevation:</label>
+            </div>
+            <div class="col-9">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="form-check form-switch mb-0">
+                        <input class="form-check-input" type="checkbox" id="includeElev">
+                        <label class="form-check-label" for="includeElev">Include</label>
+                    </div>
+                    <div class="form-check mb-0" id="distortionWrap"
+                        style="opacity: 0.4; pointer-events: none; transition: opacity 0.2s;">
+                        <input class="form-check-input" type="checkbox" id="applyDistortion">
+                        <label class="form-check-label" for="applyDistortion">Distortion</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coordinate Offset Section -->
+    <div class="settings-group">
+        <div class="section-title">Coordinate Offset</div>
+        <div class="mb-3 row">
+            <div class="col-3 text-end">
+                <label for="offset" class="form-label">Mode:</label>
+            </div>
+            <div class="col-9">
+                <select class="form-select form-select-sm" id="offset">
+                    <option value="none" selected>None</option>
+                    <option value="latlon">Lat & Lon</option>
+                    <option value="btexz">BTE X & Z</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- From input -->
+        <div id="fromInput" class="mb-3 row input-container">
+            <div class="col-3 text-end">
+                <label for="fromOffset" class="form-label">From:</label>
+            </div>
+            <div class="col-9">
+                <input type="text" class="form-control form-control-sm" id="fromOffset" placeholder="Lat, Lon" />
+                <span class="clear-btn" data-clear="fromOffset">&#10005;</span>
+            </div>
+        </div>
+
+        <!-- To input -->
+        <div id="toInput" class="mb-3 row input-container">
+            <div class="col-3 text-end">
+                <label for="toOffset" class="form-label">To:</label>
+            </div>
+            <div class="col-9">
+                <input type="text" class="form-control form-control-sm" id="toOffset" placeholder="Lat, Lon" />
+                <span class="clear-btn" data-clear="toOffset">&#10005;</span>
+            </div>
+        </div>
+
+        <!-- X input -->
+        <div id="xInput" class="mb-3 row input-container">
+            <div class="col-3 text-end">
+                <label for="xOffset" class="form-label">X Offset:</label>
+            </div>
+            <div class="col-9">
+                <input type="number" class="form-control form-control-sm" id="xOffset" step="0.0125" />
+                <span class="clear-btn" data-clear="xOffset">&#10005;</span>
+            </div>
+        </div>
+
+        <!-- Z input -->
+        <div id="zInput" class="mb-3 row input-container">
+            <div class="col-3 text-end">
+                <label for="zOffset" class="form-label">Z Offset:</label>
+            </div>
+            <div class="col-9">
+                <input type="number" class="form-control form-control-sm" id="zOffset" step="0.0125" />
+                <span class="clear-btn" data-clear="zOffset">&#10005;</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mockStorage = {
+            get: (keys) => {
+                const result = {};
+                keys.forEach(key => {
+                    const val = localStorage.getItem('coord_' + key);
+                    try { result[key] = val ? JSON.parse(val) : undefined; } catch { result[key] = val; }
+                });
+                return result;
+            },
+            set: (data) => {
+                for (const key in data) { localStorage.setItem('coord_' + key, JSON.stringify(data[key])); }
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const el = (id) => document.getElementById(id);
+            const controls = {
+                offset: el('offset'),
+                fromInput: el('fromInput'), toInput: el('toInput'),
+                xInput: el('xInput'), zInput: el('zInput'),
+                fromOffset: el('fromOffset'), toOffset: el('toOffset'),
+                xOffset: el('xOffset'), zOffset: el('zOffset'),
+                prefixSlash: el('prefixSlash'), prefixTpll: el('prefixTpll'), prefixNone: el('prefixNone'),
+                includeElev: el('includeElev'), applyDistortion: el('applyDistortion'),
+                distortionWrap: el('distortionWrap')
+            };
+
+            function load() {
+                const data = mockStorage.get(['xInput', 'zInput', 'offset', 'fromInput', 'toInput', 'prefix', 'includeElev', 'applyDistortion']);
+                controls.xOffset.value = data.xInput || '';
+                controls.zOffset.value = data.zInput || '';
+                controls.offset.value = data.offset || 'none';
+                controls.fromOffset.value = Array.isArray(data.fromInput) ? data.fromInput.join(',') : (data.fromInput || '');
+                controls.toOffset.value = Array.isArray(data.toInput) ? data.toInput.join(',') : (data.toInput || '');
+
+                if (data.prefix === 'none') controls.prefixNone.checked = true;
+                else if (data.prefix === 'tpll') controls.prefixTpll.checked = true;
+                else controls.prefixSlash.checked = true;
+
+                controls.includeElev.checked = !!data.includeElev;
+                controls.applyDistortion.checked = !!data.applyDistortion;
+                updateElevUI();
+                toggleInputs();
+                updatePreview();
+            }
+
+            function toggleInputs() {
+                const val = controls.offset.value;
+                controls.fromInput.style.display = (val === 'latlon') ? 'flex' : 'none';
+                controls.toInput.style.display = (val === 'latlon') ? 'flex' : 'none';
+                controls.xInput.style.display = (val === 'btexz') ? 'flex' : 'none';
+                controls.zInput.style.display = (val === 'btexz') ? 'flex' : 'none';
+            }
+
+            function updateElevUI() {
+                const enabled = controls.includeElev.checked;
+                controls.distortionWrap.style.opacity = enabled ? "1" : "0.4";
+                controls.distortionWrap.style.pointerEvents = enabled ? "auto" : "none";
+                if (!enabled) {
+                    controls.applyDistortion.checked = false;
+                    mockStorage.set({ applyDistortion: false });
+                }
+            }
+
+            function updatePreview() {
+                const prefixEl = document.querySelector('input[name="prefix"]:checked');
+                const prefix = prefixEl ? prefixEl.value : 'slash';
+                const includeElev = controls.includeElev.checked;
+                const applyDist = controls.applyDistortion.checked;
+
+                let lat = 25.033668, lon = 121.564816, elev = 516, ground = 8;
+
+                let res = "";
+                if (prefix === 'slash') res += "/tpll ";
+                else if (prefix === 'tpll') res += "tpll ";
+
+                res += `${lat} ${lon}`;
+
+                if (includeElev) {
+                    let finalElev = elev;
+                    if (applyDist) finalElev = Math.round((elev - ground) * 1.087 + ground); // Mock distortion
+                    res += ` ${finalElev}`;
+                }
+
+                document.getElementById('livePreview').textContent = res;
+            }
+
+            controls.offset.addEventListener('change', () => { mockStorage.set({ offset: controls.offset.value }); toggleInputs(); updatePreview(); });
+
+            document.querySelectorAll('input[name="prefix"]').forEach(r => {
+                r.addEventListener('change', (e) => { mockStorage.set({ prefix: e.target.value }); updatePreview(); });
+            });
+
+            controls.includeElev.addEventListener('change', (e) => {
+                mockStorage.set({ includeElev: e.target.checked });
+                updateElevUI();
+                updatePreview();
+            });
+
+            controls.applyDistortion.addEventListener('change', (e) => {
+                mockStorage.set({ applyDistortion: e.target.checked });
+                updatePreview();
+            });
+
+            ['xOffset', 'zOffset', 'fromOffset', 'toOffset'].forEach(id => {
+                const input = el(id);
+                input.addEventListener('input', (e) => {
+                    const key = id.replace('Offset', 'Input');
+                    const val = (id.includes('Offset')) ? e.target.value : e.target.value.split(',').map(Number);
+                    mockStorage.set({ [key]: (id.startsWith('x') || id.startsWith('z')) ? Number(val) : val });
+                    updatePreview();
+                });
+            });
+
+            document.querySelectorAll('.clear-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const id = this.getAttribute('data-clear');
+                    const input = el(id);
+                    input.value = '';
+                    const key = id.replace('Offset', 'Input');
+                    mockStorage.set({ [key]: '' });
+                    updatePreview();
+                });
+            });
+
+            load();
+        });
+    </script>
+</body>
+
+</html>
