@@ -1,9 +1,15 @@
 {
     "manifest_version": 3,
     "name": "CoordExtractor",
-    "version": "1.5",
+    "version": "1.6",
     "description": "A coordinate extraction tool for map services.",
-    "permissions": ["activeTab", "scripting", "storage", "clipboardRead", "clipboardWrite"],
+    "permissions": [
+        "activeTab",
+        "scripting",
+        "storage",
+        "clipboardRead",
+        "clipboardWrite"
+    ],
     "host_permissions": [
         "*://*.google.com/*",
         "*://*.bing.com/*",
@@ -20,9 +26,9 @@
         "*://gisdawh.kcg.gov.tw/*",
         "*://urbangis.kcg.gov.tw/*",
         "*://urbangis.hccg.gov.tw/*",
-		"*://3dgis.hccg.gov.tw/*",
-		"*://urbangis.chcg.gov.tw/*",
-		"*://map.yunlin.gov.tw/*",
+        "*://3dgis.hccg.gov.tw/*",
+        "*://urbangis.chcg.gov.tw/*",
+        "*://map.yunlin.gov.tw/*",
         "*://nsp.tcd.gov.tw/*",
         "*://map.taitung.gov.tw/*",
         "*://map.hl.gov.tw/*",
@@ -45,6 +51,7 @@
         {
             "matches": [
                 "*://*.google.com/maps/*",
+                "*://earth.google.com/web/*",
                 "*://*.bing.com/*",
                 "*://yandex.com/*",
                 "*://maps.nlsc.gov.tw/*",
@@ -59,23 +66,36 @@
                 "*://gisdawh.kcg.gov.tw/*",
                 "*://urbangis.kcg.gov.tw/*",
                 "*://urbangis.hccg.gov.tw/*",
-				"*://3dgis.hccg.gov.tw/*",
-				"*://urbangis.chcg.gov.tw/*",
-				"*://map.yunlin.gov.tw/*",
+                "*://3dgis.hccg.gov.tw/*",
+                "*://urbangis.chcg.gov.tw/*",
+                "*://map.yunlin.gov.tw/*",
                 "*://nsp.tcd.gov.tw/*",
                 "*://map.taitung.gov.tw/*",
                 "*://map.hl.gov.tw/*",
                 "*://upgis.klcg.gov.tw/*",
                 "*://urban.kinmen.gov.tw/kmgisweb/*"
             ],
-            "js": ["utils.js", "bte_projection.js", "content.js"]
+            "css": ["content.css"],
+            "js": [
+                "utils.js",
+                "config.js",
+                "bte_projection.js",
+                "content.js"
+            ]
         }
     ],
-	"commands": {
-		"copy-coordinates": {
-			"suggested_key": {"default":"Alt+C"},
-			"description": "Copy coordinates"
-		}
-	}
+    "commands": {
+        "copy-coordinates": {
+            "suggested_key": {
+                "default": "Alt+C"
+            },
+            "description": "Copy coordinates"
+        },
+        "set-ground-elevation": {
+            "suggested_key": {
+                "default": "Alt+G"
+            },
+            "description": "Set captured elevation as Ground level"
+        }
+    }
 }
-
