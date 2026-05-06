@@ -239,7 +239,7 @@ async function copyToClipboard(coord) {
             'offset', 'prefix', 'includeElev', 'applyDistortion'
         ]);
         const offsetType = data.offset || 'none';
-        const prefixType = data.prefix || 'slash';
+        const prefixType = data.prefix || 'tpll';
         // 預設為 true (除非明確設為 false)
         const includeElev = data.includeElev !== false;
         const applyDist = !!data.applyDistortion;
@@ -261,12 +261,11 @@ async function copyToClipboard(coord) {
         let outputParts = [];
 
         // 處理 Prefix
-        if (prefixType === 'slash') outputParts.push("/tpll");
-        else if (prefixType === 'tpll') outputParts.push("tpll");
+        if (prefixType === 'tpll') outputParts.push("/tpll");
+        else if (prefixType === 'upll') outputParts.push("/upll");
 
-        // 座標 (緯 經)
-        outputParts.push(finalCoord.lat);
-        outputParts.push(finalCoord.lon);
+        // 座標 (緯, 經)
+        outputParts.push(`${finalCoord.lat}, ${finalCoord.lon}`);
 
         // 處理高度
         if (includeElev && finalCoord.elev !== undefined && finalCoord.elev !== null) {
