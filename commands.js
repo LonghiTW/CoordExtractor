@@ -75,13 +75,35 @@
     };
 
     // --- 2. 座標處理邏輯 (對應 config.js) ---
-    function latlon(coordinatesText) {
-        const regex = /(\d+(?:\.\d+)?)(?:N)?[\s,]+(\d+(?:\.\d+)?)(?:E)?/;
-        const match = coordinatesText.match(regex);
+    function latlon(text) {
+        const coordRegex = /([-+]?\d+\.\d+)\s*([NS])?\s*[,/\s]\s*([-+]?\d+\.\d+)\s*([EW])?/i;
+        const match = text.match(coordRegex);
+
         if (match) {
-            return { lat: parseFloat(match[1]), lon: parseFloat(match[2]) };
+            let lat = parseFloat(match[1]);
+            let lon = parseFloat(match[3]);
+
+            const ns = match[2]?.toUpperCase();
+            const ew = match[4]?.toUpperCase();
+
+            if (ns === 'S') lat = -lat;
+            if (ew === 'W') lon = -lon;
+
+            return { lat, lon };
         }
         return null;
+    }
+
+    function genericElevation(text) {
+        // 提取高度數字 (尋找 「公尺」 或 「m」 前面的數字)
+        const elevRegex = /(-?\d+)\s*(?:公尺|m)/;
+        const elevMatch = text.match(elevRegex);
+        if (elevMatch) {
+            return parseFloat(elevMatch[1]);
+        }
+        // 嘗試抓取純數字 (如果沒有單位)
+        const pureNumMatch = text.match(/-?\d+(?:\.\d+)?/);
+        return pureNumMatch ? parseFloat(pureNumMatch[0]) : null;
     }
 
     function lonlat(coordinatesText) {
@@ -113,6 +135,35 @@
         return null;
     }
 
+    function nlsc3DOnLoad() {
+        const ensureTWD97 = () => {
+            // 在 commands.js 測試模式下，如果使用者沒帶 ifframe，我們就找全域的
+            const radio = document.getElementById('CoorDisplay-TWD97');
+            if (radio && !radio.checked) {
+                radio.click();
+                console.log('[CoordExtractor] NLSC 3D: TWD97 radio selected.');
+            }
+        };
+        setTimeout(ensureTWD97, 1000);
+    }
+
+    function nlsc3DExtractor(root) {
+        // 確保選取 TWD97 (雙重保險)
+        const radio = root.getElementById('CoorDisplay-TWD97');
+        if (radio && !radio.checked) {
+            radio.click();
+        }
+
+        const x = root.getElementById('CoorDisplay-X')?.textContent.trim() || "";
+        const y = root.getElementById('CoorDisplay-Y')?.textContent.trim() || "";
+        const z = root.getElementById('CoorDisplay-Z')?.textContent.trim() || "";
+
+        return {
+            coordText: `${x} ${y}`,
+            elevText: z
+        };
+    }
+
     function googleEarthOnLoad() {
         let attempts = 0;
         const interval = setInterval(() => {
@@ -141,39 +192,36 @@
         });
 
         if (targetNodes.length > 0) {
-            // 抓取座標文字與高度文字
             const latlonSpan = targetNodes[0].querySelector('span');
             const elevSpan = targetNodes.length > 1 ? targetNodes[1].querySelector('span') : null;
 
-            const latlonText = latlonSpan ? latlonSpan.textContent.trim() : "";
+            const coordText = latlonSpan ? latlonSpan.textContent.trim() : "";
             const elevText = elevSpan ? elevSpan.textContent.trim() : "";
 
-            // 將兩者組合回傳，由 processCoordinates 進行拆解
-            return latlonText + (elevText ? " | " + elevText : "");
+            return { coordText, elevText };
         }
-        return null;
+        return { coordText: null, elevText: null };
     }
 
     function googleEarthCoordinates(text) {
-        const parts = text.split(' | ');
-        const latlonText = parts[0];
-        const elevText = parts.length > 1 ? parts[1] : "";
+        // 預處理：移除多餘字元
+        const clean = text.replace(/[\u200E\u200F]/g, '').replaceAll('\\', '');
 
-        // 解析高度資訊
-        let elev = null;
-        if (elevText) {
-            const elevMatch = elevText.match(/-?\d+(?:\.\d+)?/);
-            if (elevMatch) {
-                elev = parseFloat(elevMatch[0]);
-            }
+        // 支援十進位格式 (35.833, 139.666)
+        const latlonRegex = /([-+]?\d+\.\d+)[^\d]+([-+]?\d+\.\d+)/;
+        const latlonMatch = clean.match(latlonRegex);
+        if (latlonMatch) {
+            return {
+                lat: parseFloat(latlonMatch[1]),
+                lon: parseFloat(latlonMatch[2])
+            };
         }
 
-        // 解析緯度 (N/S) 與經度 (E/W) 支援 十進位度數、度分、度分秒
-        const latRegex = /(\d+(?:\.\d+)?)°\s*(?:(\d+(?:\.\d+)?)')?\s*(?:(\d+(?:\.\d+)?)[”"″])?\s*([NS])/i;
-        const lonRegex = /(\d+(?:\.\d+)?)°\s*(?:(\d+(?:\.\d+)?)')?\s*(?:(\d+(?:\.\d+)?)[”"″])?\s*([EW])/i;
-
-        const latMatch = latlonText.match(latRegex);
-        const lonMatch = latlonText.match(lonRegex);
+        // 支援度分秒格式 (DMS)
+        const latRegex = /(\d+)°\s*(\d+)'\s*(\d+(?:\.\d+)?)"\s*([NS])/i;
+        const lonRegex = /(\d+)°\s*(\d+)'\s*(\d+(?:\.\d+)?)"\s*([EW])/i;
+        const latMatch = clean.match(latRegex);
+        const lonMatch = clean.match(lonRegex);
 
         if (latMatch && lonMatch) {
             const parseDMS = (m) => {
@@ -184,17 +232,22 @@
                 let decimal = deg + (min / 60) + (sec / 3600);
                 return (dir === 'S' || dir === 'W') ? -decimal : decimal;
             };
-            return { lat: parseDMS(latMatch), lon: parseDMS(lonMatch), elev: elev };
+            return {
+                lat: parseDMS(latMatch),
+                lon: parseDMS(lonMatch)
+            };
         }
 
-        // 若未符合 N/S/E/W 格式，退回純數字提取 (預設前緯後經)
-        let latSign = latlonText.includes('S') ? -1 : 1;
-        let lonSign = latlonText.includes('W') ? -1 : 1;
-        const clean = latlonText.replace(/[^0-9.\-]/g, ' ').trim();
+        // 若未符合上述格式，嘗試純數字提取 (預設前緯後經)
         const fallbackRegex = /(-?\d+(?:\.\d+)?).*?(-?\d+(?:\.\d+)?)/;
         const fallbackMatch = clean.match(fallbackRegex);
         if (fallbackMatch) {
-            return { lat: parseFloat(fallbackMatch[1]) * latSign, lon: parseFloat(fallbackMatch[2]) * lonSign, elev: elev };
+            let latSign = clean.includes('S') ? -1 : 1;
+            let lonSign = clean.includes('W') ? -1 : 1;
+            return {
+                lat: parseFloat(fallbackMatch[1]) * latSign,
+                lon: parseFloat(fallbackMatch[2]) * lonSign
+            };
         }
 
         return null;
@@ -253,9 +306,11 @@
         },
         '3dmaps.nlsc.gov.tw': {
             name: 'Taiwan 3D Map Service',
-            ifframe: ['frame', 0],
-            selector: ['.pg-TableType1RightContent', [5, 4]],
-            processCoordinates: genericTWD97
+            onLoad: nlsc3DOnLoad,
+            customExtractor: nlsc3DExtractor,
+            processCoordinates: genericTWD97,
+            processElevation: genericElevation,
+            height: true
         },
         'gis.ardswc.gov.tw': {
             name: 'BigGIS',
@@ -307,11 +362,11 @@
                 // 高雄地圖網(舊版)
                 if (path.includes('kcmap2')) return ['td.g4o-statusbar-footbar-btn.g4o-statusbar-foot-mousePosition.ol-unselectable'];
                 // 高雄地圖網
-                if (path.includes('kcmap')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(12) > div.mousePosition > span > div'];
+                if (path.includes('kcmap')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(13) > div.mousePosition > span > div'];
                 // 高雄地籍圖資服務網(舊版)
                 if (path.includes('landeasy/page.cfm')) return ['#mouseInfo'];
                 // 高雄地籍圖資服務網
-                if (path.includes('landeasy')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(37) > div.mousePosition > span > div'];
+                if (path.includes('landeasy')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(38) > div.mousePosition > span > div'];
                 return [];
             })(),
             ifinnerText: (function () {
@@ -404,30 +459,40 @@
         }
 
         const selectors = info.selector;
-        if (!selectors) return null;
+        if (!selectors) return { coordText: null, elevText: null };
 
         const elements = root.querySelectorAll(selectors[0]);
-        if (elements.length === 0) return null;
+        if (elements.length === 0) return { coordText: null, elevText: null };
 
+        let coordText = "";
         if (selectors[1] !== undefined) {
             if (Array.isArray(selectors[1])) {
-                return selectors[1].map(i => {
+                coordText = selectors[1].map(i => {
                     const idx = i < 0 ? elements.length + i : i;
                     return elements[idx]?.textContent.trim();
                 }).join(' ');
+            } else {
+                const i = selectors[1];
+                const idx = i < 0 ? elements.length + i : i;
+                coordText = elements[idx]?.textContent.trim();
             }
-            const i = selectors[1];
-            const idx = i < 0 ? elements.length + i : i;
-            return elements[idx]?.textContent.trim();
+        } else if (info.ifinnerText) {
+            coordText = elements[0].innerText.trim();
+        } else {
+            coordText = elements.length === 1
+                ? elements[0].textContent.trim()
+                : Array.from(elements).map(el => el.textContent.trim()).join(' ');
         }
 
-        if (info.ifinnerText) {
-            return elements[0].innerText.trim();
+        let elevText = "";
+        if (typeof info.height === 'string') {
+            const elevElem = root.querySelector(info.height);
+            if (elevElem) {
+                elevText = elevElem.textContent.trim();
+            }
         }
 
-        return elements.length === 1
-            ? elements[0].textContent.trim()
-            : Array.from(elements).map(el => el.textContent.trim()).join(' ');
+        return { coordText, elevText };
     }
 
     function handleSetGround() {
@@ -435,13 +500,17 @@
         const config = sites_config[host];
         if (!config) return;
 
-        const text = getCoordinatesText(config);
-        if (!text) return;
-        const cleanText = text.replace(/[\u200E\u200F]/g, '');
-        const result = config.processCoordinates(cleanText);
+        const { coordText, elevText } = getCoordinatesText(config);
+        if (!coordText) return;
 
-        if (result && result.elev !== undefined && result.elev !== null) {
-            const ground = Math.round(result.elev);
+        const parsed = config.processCoordinates(coordText);
+        let elev = parsed?.elev;
+        if ((elev === undefined || elev === null) && elevText && config.processElevation) {
+            elev = config.processElevation(elevText);
+        }
+
+        if (elev !== undefined && elev !== null) {
+            const ground = Math.round(elev);
             TEST_SETTINGS.ground = ground;
 
             // 更新 UI
@@ -504,16 +573,18 @@
             return;
         }
 
-        const text = getCoordinatesText(config);
-        if (!text) {
+        const data = getCoordinatesText(config);
+        const { coordText, elevText } = data;
+
+        if (!coordText) {
             console.error(`[CoordExtractor] 找不到元素或無法擷取文字。`);
             return;
         }
 
-        // --- 強制輸出原始擷取到的文字，方便除錯 ---
-        console.log(`%c[CoordExtractor Raw Text] 擷取到的原始文字:`, 'color: #ff9900; font-weight: bold;', text);
+        // --- 強制輸出原始擷取到的資料，方便除錯 ---
+        console.log(`%c[CoordExtractor Raw Data] 擷取到的原始資料:`, 'color: #ff9900; font-weight: bold;', data);
 
-        const cleanText = text.replace(/[\u200E\u200F]/g, '');
+        const cleanText = coordText.replace(/[\u200E\u200F]/g, '');
         const result = config.processCoordinates(cleanText);
 
         if (result) {
@@ -521,12 +592,16 @@
             const uiGround = parseFloat(document.getElementById('ce-ground')?.value || TEST_SETTINGS.ground);
             const uiOffset = parseFloat(document.getElementById('ce-offset')?.value || TEST_SETTINGS.offset);
 
-            let baseElev = result.elev || 0;
-            let processedElev = baseElev;
-            let finalElev = baseElev;
+            // 處理高度解析
+            let baseElev = result.elev;
+            if ((baseElev === undefined || baseElev === null) && elevText && config.processElevation) {
+                baseElev = config.processElevation(elevText);
+            }
+
+            let finalElev = 0;
             let note = "";
 
-            if (TEST_SETTINGS.includeElev && result.elev !== undefined) {
+            if (TEST_SETTINGS.includeElev && baseElev !== undefined && baseElev !== null) {
                 finalElev = Math.round(baseElev + uiOffset);
                 note = ` (高度: ${finalElev}m, Offset: ${uiOffset}m)`;
             }
@@ -536,7 +611,7 @@
             outputParts.push(result.lat);
             outputParts.push(result.lon);
 
-            if (TEST_SETTINGS.includeElev && result.elev !== undefined) {
+            if (TEST_SETTINGS.includeElev && baseElev !== undefined && baseElev !== null) {
                 outputParts.push(finalElev);
             }
 
@@ -551,7 +626,7 @@
                 alert(`網站：${config.name}\n結果：${output}\n(請手動複製，因剪貼簿權限受限)`);
             });
         } else {
-            console.error(`[CoordExtractor] 座標解析失敗。擷取到的文字為:`, text);
+            console.error(`[CoordExtractor] 座標解析失敗。擷取到的文字為:`, coordText);
         }
     }
 
