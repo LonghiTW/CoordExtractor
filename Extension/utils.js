@@ -1,3 +1,6 @@
+// Cross-browser compatibility
+const api = typeof chrome !== 'undefined' ? chrome : browser;
+
 const utils = {
     toRadians(degrees) {
         return degrees * Math.PI / 180;
