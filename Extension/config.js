@@ -219,6 +219,17 @@ function lonlat(coordinatesText) {
 }
 
 function genericTWD97(coordinatesText) {
+    // 優先匹配 TWD97 標籤後的座標
+    const twd97Regex = /\(TWD97\)\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/i;
+    const twd97Match = coordinatesText.match(twd97Regex);
+    if (twd97Match) {
+        const x = parseFloat(twd97Match[1]);
+        const y = parseFloat(twd97Match[2]);
+        if (!isNaN(x) && !isNaN(y)) {
+            return geo.TWD97toWGS84({ x, y });
+        }
+    }
+
     // 預處理：將緊黏著數字的 X97, Y97, TWD97 替換為空白，強制把它們與真正的座標值隔開
     const preprocessed = coordinatesText.replace(/(TWD97|X97|Y97|X:|Y:)/gi, ' ');
     // TWD97 座標(公尺)至少為五位數(X通常十萬起跳，Y百萬起跳)
@@ -234,8 +245,6 @@ function genericTWD97(coordinatesText) {
     }
     return null;
 }
-
-
 
 async function nlsc3DExtractor(root) {
     // 確保選取 TWD97 (雙重保險)
@@ -273,74 +282,91 @@ function googleEarthOnLoad() {
 
 // Google Earth Web 座標提取實作 (Original implementation by Reysun)
 function googleEarthExtractor(root) {
-    const nodes = root.querySelectorAll('flt-semantics');
-    const screenHeight = window.innerHeight;
-    const screenWidth = window.innerWidth;
-    const targetNodes = Array.from(nodes).filter(node => {
+    const nodes = Array.from(root.querySelectorAll('flt-semantics'));
+    const coordKeywords = /(?:游標經緯度|經緯度|Latitude|Longitude|Lat|Lon|Lng)/i;
+    const elevKeywords = /(?:高度|海平面|elevation|altitude|height)/i;
+
+    const candidates = nodes.filter(node => {
         const rect = node.getBoundingClientRect();
-        return rect.bottom > screenHeight - 50 &&
-            rect.right > screenWidth - 200 &&
-            rect.width > 10 &&
-            rect.height < 30 &&
-            Array.from(node.querySelectorAll('span')).some(span => span.textContent.trim().length > 0) &&
-            !node.querySelector('flt-semantics');
+        return rect.width > 10 && rect.height > 5 && rect.bottom > 0 && rect.right > 0 && node.textContent.trim().length > 0;
     });
 
-    if (targetNodes.length > 0) {
-        // 抓取座標文字與高度文字
-        const latlonSpan = targetNodes[0].querySelector('span');
-        const elevSpan = targetNodes.length > 1 ? targetNodes[1].querySelector('span') : null;
+    let coordText = null;
+    let elevText = null;
 
-        const coordText = latlonSpan ? latlonSpan.textContent.trim() : "";
-        const elevText = elevSpan ? elevSpan.textContent.trim() : "";
+    for (const node of candidates) {
+        const text = node.textContent.trim();
+        if (!text) continue;
 
-        return { coordText, elevText };
+        if (!coordText && coordKeywords.test(text)) {
+            coordText = text;
+        }
+        if (!elevText && elevKeywords.test(text)) {
+            elevText = text;
+        }
     }
-    return { coordText: null, elevText: null };
+
+    if (!coordText || !elevText) {
+        for (const node of candidates) {
+            const text = node.textContent.trim();
+            if (!text) continue;
+
+            if (!coordText && /[NS].*[EW]|[EW].*[NS]/i.test(text)) {
+                coordText = text;
+            }
+            if (!elevText && /-?\d+(?:\.\d+)?\s*(?:m|公尺|meter|meters)/i.test(text)) {
+                elevText = text;
+            }
+        }
+    }
+
+    if (!coordText && candidates.length > 0) {
+        coordText = candidates[0].textContent.trim();
+    }
+    if (!elevText && candidates.length > 1) {
+        elevText = candidates[1].textContent.trim();
+    }
+
+    return { coordText: coordText || null, elevText: elevText || null };
 }
 
 function googleEarthCoordinates(text) {
-    // 預處理：移除多餘字元
     const clean = text.replace(/[\u200E\u200F]/g, '').replaceAll('\\', '');
 
-    // 支援十進位格式 (35.833, 139.666)
-    const latlonRegex = /([-+]?\d+\.\d+)[^\d]+([-+]?\d+\.\d+)/;
-    const latlonMatch = clean.match(latlonRegex);
-    if (latlonMatch) {
-        return {
-            lat: parseFloat(latlonMatch[1]),
-            lon: parseFloat(latlonMatch[2])
-        };
-    }
+    const dmsRegex = /(\d{1,3})°\s*(\d+(?:\.\d+)?)'\s*(?:(\d+(?:\.\d+)?)")?\s*([NS])/i;
+    const dmsLonRegex = /(\d{1,3})°\s*(\d+(?:\.\d+)?)'\s*(?:(\d+(?:\.\d+)?)")?\s*([EW])/i;
+    const latDms = clean.match(dmsRegex);
+    const lonDms = clean.match(dmsLonRegex);
 
-    // 支援度分秒格式 (DMS)
-    // 支援解析度分秒 (例如 25°02'01.1"N)
-    const latRegex = /(\d+)°\s*(\d+)'\s*(\d+(?:\.\d+)?)"\s*([NS])/i;
-    const lonRegex = /(\d+)°\s*(\d+)'\s*(\d+(?:\.\d+)?)"\s*([EW])/i;
-    const latMatch = clean.match(latRegex);
-    const lonMatch = clean.match(lonRegex);
-
-    if (latMatch && lonMatch) {
-        const parseDMS = (m) => {
-            let deg = parseFloat(m[1] || 0);
-            let min = parseFloat(m[2] || 0);
-            let sec = parseFloat(m[3] || 0);
-            let dir = m[4].toUpperCase();
-            let decimal = deg + (min / 60) + (sec / 3600);
+    if (latDms && lonDms) {
+        const parseDms = (m) => {
+            const deg = parseFloat(m[1] || 0);
+            const min = parseFloat(m[2] || 0);
+            const sec = parseFloat(m[3] || 0);
+            const dir = m[4].toUpperCase();
+            const decimal = deg + (min / 60) + (sec / 3600);
             return (dir === 'S' || dir === 'W') ? -decimal : decimal;
         };
         return {
-            lat: parseDMS(latMatch),
-            lon: parseDMS(lonMatch)
+            lat: parseDms(latDms),
+            lon: parseDms(lonDms)
         };
     }
 
-    // 若未符合上述格式，嘗試純數字提取 (預設前緯後經)
+    const decimalRegex = /([-+]?\d+\.\d+)°?\s*[NS]?[^\d\n]+([-+]?\d+\.\d+)°?\s*[EW]?/i;
+    const decimalMatch = clean.match(decimalRegex);
+    if (decimalMatch) {
+        return {
+            lat: parseFloat(decimalMatch[1]),
+            lon: parseFloat(decimalMatch[2])
+        };
+    }
+
     const fallbackRegex = /(-?\d+(?:\.\d+)?).*?(-?\d+(?:\.\d+)?)/;
     const fallbackMatch = clean.match(fallbackRegex);
     if (fallbackMatch) {
-        let latSign = clean.includes('S') ? -1 : 1;
-        let lonSign = clean.includes('W') ? -1 : 1;
+        const latSign = clean.includes('S') ? -1 : 1;
+        const lonSign = clean.includes('W') ? -1 : 1;
         return {
             lat: parseFloat(fallbackMatch[1]) * latSign,
             lon: parseFloat(fallbackMatch[2]) * lonSign
