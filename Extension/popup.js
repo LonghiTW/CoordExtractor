@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
         xInput: el('xInput'), zInput: el('zInput'),
         fromOffset: el('fromOffset'), toOffset: el('toOffset'),
         xOffset: el('xOffset'), zOffset: el('zOffset'),
-        prefixSlash: el('prefixSlash'), prefixTpll: el('prefixTpll'), prefixNone: el('prefixNone'),
+        prefixTpll: el('prefixTpll'), prefixUpll: el('prefixUpll'), prefixNone: el('prefixNone'),
         includeElev: el('includeElev'), applyDistortion: el('applyDistortion'),
         distortionWrap: el('distortionWrap')
     };
@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', function () {
         controls.toOffset.value = Array.isArray(tIn) ? tIn.join(',') : '';
 
         if (data.prefix === 'none') controls.prefixNone.checked = true;
-        else if (data.prefix === 'tpll') controls.prefixTpll.checked = true;
-        else controls.prefixSlash.checked = true;
+        else if (data.prefix === 'upll') controls.prefixUpll.checked = true;
+        else controls.prefixTpll.checked = true;
 
         controls.includeElev.checked = !!data.includeElev;
         controls.applyDistortion.checked = !!data.applyDistortion;
@@ -72,10 +72,10 @@ document.addEventListener('DOMContentLoaded', function () {
         let lat = 25.033668, lon = 121.564816, elev = 516, ground = 8;
 
         let res = "";
-        if (prefix === 'slash') res += "/tpll ";
-        else if (prefix === 'tpll') res += "tpll ";
+        if (prefix === 'tpll') res += "/tpll ";
+        else if (prefix === 'upll') res += "/upll ";
 
-        res += `${lat} ${lon}`;
+        res += `${lat}, ${lon}`;
 
         if (includeElev) {
             let finalElev = elev;
