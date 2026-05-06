@@ -336,9 +336,26 @@ async function applyBTEOffset(coord) {
             if (config.onLoad) {
                 config.onLoad();
             }
-            initHeightUI(config);
+            
+            // 由於 Google Earth 等網站是動態載入的，使用 MutationObserver 確保 UI 存在
+            if (config.height) {
+                const observer = new MutationObserver(() => {
+                    if (!document.querySelector('.ce-height-outer') && document.body) {
+                        initHeightUI(config);
+                    }
+                });
+                observer.observe(document.documentElement, { childList: true, subtree: true });
+                
+                // 立即嘗試初始化一次
+                if (document.body) initHeightUI(config);
+            }
         }
     }
 
-    init();
+    // 確保 DOM 準備就緒
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
 })();
