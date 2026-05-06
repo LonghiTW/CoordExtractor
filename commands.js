@@ -45,6 +45,13 @@
         toRadians: (d) => d * Math.PI / 180,
         toDegrees: (r) => r * 180 / Math.PI,
         TWD97toWGS84(coord97) {
+            /**
+             * CONVERTING UTM TO LATITUDE AND LONGITUDE (OR VICE VERSA)
+             * https://fypandroid.wordpress.com/2011/09/03/converting-utm-to-latitude-and-longitude-or-vice-versa/
+             *
+             * 測繪資訊成果供應管理系統(原內政部地政司衛星測量中心)
+             * https://gps.moi.gov.tw/sscenter/introduce/IntroducePage.aspx?Page=GPS9
+             */
             let easting = coord97.x, northing = coord97.y;
             let relativeX = easting - 250000, long0 = this.toRadians(121), k0 = 0.9999;
             let Equatorial_Radius = 6378137, Flattening = 1 / 298.257222101;
@@ -118,6 +125,7 @@
         }, 500);
     }
 
+    // Google Earth Web 座標提取實作 (Original implementation by Reysun)
     function googleEarthExtractor(root) {
         const nodes = root.querySelectorAll('flt-semantics');
         const screenHeight = window.innerHeight;
