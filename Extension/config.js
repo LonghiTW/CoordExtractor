@@ -219,6 +219,7 @@ function googleEarthOnLoad() {
     }, 500);
 }
 
+// Google Earth Web 座標提取實作 (Original implementation by Reysun)
 function googleEarthExtractor(root) {
     const nodes = root.querySelectorAll('flt-semantics');
     const screenHeight = window.innerHeight;
