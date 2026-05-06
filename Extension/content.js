@@ -1,4 +1,3 @@
-const api = typeof chrome !== 'undefined' ? chrome : browser;
 const hostname = window.location.hostname;
 const siteInfo = sites_config[hostname];
 const copiedObserver = new MutationObserver(handleCopiedMutations);
