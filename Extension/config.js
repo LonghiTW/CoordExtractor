@@ -283,51 +283,40 @@ function googleEarthOnLoad() {
 // Google Earth Web 座標提取實作 (Original implementation by Reysun)
 function googleEarthExtractor(root) {
     const nodes = Array.from(root.querySelectorAll('flt-semantics'));
-    const coordKeywords = /(?:游標經緯度|經緯度|Latitude|Longitude|Lat|Lon|Lng)/i;
-    const elevKeywords = /(?:高度|海平面|elevation|altitude|height)/i;
+    const screenHeight = window.innerHeight;
+    const screenWidth = window.innerWidth;
 
-    const candidates = nodes.filter(node => {
+    const targetNodes = nodes.filter(node => {
         const rect = node.getBoundingClientRect();
-        return rect.width > 10 && rect.height > 5 && rect.bottom > 0 && rect.right > 0 && node.textContent.trim().length > 0;
+        const hasRealText = Array.from(node.querySelectorAll('span')).some(span => span.textContent.trim().length > 0);
+        const hasChildSemantics = node.querySelector('flt-semantics');
+        return rect.bottom > screenHeight - 50 &&
+            rect.right > screenWidth - 200 &&
+            rect.width > 10 &&
+            rect.height < 30 &&
+            hasRealText &&
+            !hasChildSemantics;
     });
 
-    let coordText = null;
-    let elevText = null;
-
-    for (const node of candidates) {
-        const text = node.textContent.trim();
-        if (!text) continue;
-
-        if (!coordText && coordKeywords.test(text)) {
-            coordText = text;
-        }
-        if (!elevText && elevKeywords.test(text)) {
-            elevText = text;
-        }
+    if (targetNodes.length >= 2) {
+        const coordText = targetNodes[0].querySelector('span')?.textContent.trim() || null;
+        const elevText = targetNodes[1].querySelector('span')?.textContent.trim() || null;
+        return { coordText, elevText };
     }
 
-    if (!coordText || !elevText) {
-        for (const node of candidates) {
-            const text = node.textContent.trim();
-            if (!text) continue;
+    const allText = nodes.map(node => node.textContent.trim()).join('\n');
 
-            if (!coordText && /[NS].*[EW]|[EW].*[NS]/i.test(text)) {
-                coordText = text;
-            }
-            if (!elevText && /-?\d+(?:\.\d+)?\s*(?:m|公尺|meter|meters)/i.test(text)) {
-                elevText = text;
-            }
-        }
-    }
+    const coordText = allText.match(/(?:游標經緯度|Cursor latitude and longitude)[\s\S]*?(\d{1,3}\.\d+°?\s*[NS].*?\d{1,3}\.\d+°?\s*[EW])/i)?.[1] ||
+        allText.match(/(\d{1,3}\.\d+°?\s*[NS].*?\d{1,3}\.\d+°?\s*[EW])/i)?.[1] ||
+        allText.match(/(\d{1,3}\.\d+)\s*[NS].*?(\d{1,3}\.\d+)\s*[EW]/i)?.[0] ||
+        null;
 
-    if (!coordText && candidates.length > 0) {
-        coordText = candidates[0].textContent.trim();
-    }
-    if (!elevText && candidates.length > 1) {
-        elevText = candidates[1].textContent.trim();
-    }
+    const elevMatch = allText.match(/(?:游標相對於海平面的高度|Cursor elevation relative to sea level)[\s\S]*?(\d+(?:\.\d+)?)\s*(?:公尺|m)/i);
+    const elevText = elevMatch ? `${elevMatch[1]} 公尺` :
+        allText.match(/(\d+(?:\.\d+)?)\s*(?:公尺|m)/i)?.[0] ||
+        null;
 
-    return { coordText: coordText || null, elevText: elevText || null };
+    return { coordText, elevText };
 }
 
 function googleEarthCoordinates(text) {
