@@ -52,8 +52,8 @@
             "matches": [
                 "*://*.google.com/maps/*",
                 "*://earth.google.com/web/*",
-                "*://*.bing.com/*",
-                "*://yandex.com/*",
+                "*://*.bing.com/maps/*",
+                "*://yandex.com/maps/*",
                 "*://maps.nlsc.gov.tw/*",
                 "*://3dmaps.nlsc.gov.tw/*",
                 "*://gis.ardswc.gov.tw/*",
