@@ -12,13 +12,13 @@ const utils = {
 
 const geo = {
     // TWD97 UTM to WGS84 Latitude and Longitude
-        /**
-         * CONVERTING UTM TO LATITUDE AND LONGITUDE (OR VICE VERSA)
-         * https://fypandroid.wordpress.com/2011/09/03/converting-utm-to-latitude-and-longitude-or-vice-versa/
-         *
-         * 測繪資訊成果供應管理系統(原內政部地政司衛星測量中心)
-         * https://gps.moi.gov.tw/sscenter/introduce/IntroducePage.aspx?Page=GPS9
-         */
+    /**
+     * CONVERTING UTM TO LATITUDE AND LONGITUDE (OR VICE VERSA)
+     * https://fypandroid.wordpress.com/2011/09/03/converting-utm-to-latitude-and-longitude-or-vice-versa/
+     *
+     * 測繪資訊成果供應管理系統(原內政部地政司衛星測量中心)
+     * https://gps.moi.gov.tw/sscenter/introduce/IntroducePage.aspx?Page=GPS9
+     */
     TWD97toWGS84(coord97) {
         // Symbols
         let easting = coord97.x;
@@ -42,8 +42,8 @@ const geo = {
         let e1_4 = e1 * e1 * e1 * e1;
         let J1 = (1.5 * e1 - 27 / 32 * e1_3);
         let J2 = (21 / 16 * e1_2 - 55 / 32 * e1_4);
-        let J3 = (151 / 96 *e1_3);
-        let J4 = (1097 / 512 *e1_4);
+        let J3 = (151 / 96 * e1_3);
+        let J4 = (1097 / 512 * e1_4);
         let fp = mu + J1 * Math.sin(2 * mu) + J2 * Math.sin(4 * mu) + J3 * Math.sin(6 * mu) + J4 * Math.sin(8 * mu);
         // Calculate Latitude and Longitude
         let ee2 = e_2 / (1 - e_2);
@@ -67,7 +67,7 @@ const geo = {
         let Q7 = (5 - 2 * C1 + 28 * T1 - 3 * C1_2 + 8 * ee2 + 24 * T1_2) * D_5 / 120;
         let latR = fp - Q1 * (Q2 - Q3 + Q4);
         let lonR = long0 + (D - Q6 + Q7) / Math.cos(fp);
-        
+
         return { lat: utils.toDegrees(latR), lon: utils.toDegrees(lonR) };
     }
 };
