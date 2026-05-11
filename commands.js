@@ -36,6 +36,23 @@
             .ce-height-label { font-size: 0.65rem; color: #666; margin-bottom: 1px; text-align: center; }
             .ce-height-input { width: 50px; padding: 2px 4px; font-size: 0.8rem; border: 1px solid #ddd; border-radius: 4px; outline: none; text-align: right; }
             .ce-height-input:focus { border-color: #0d6efd; }
+            #ce-toast-notification {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background-color: rgba(40, 167, 69, 0.9);
+                color: white;
+                padding: 12px 24px;
+                borderRadius: 8px;
+                fontFamily: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                fontSize: 15px;
+                fontWeight: bold;
+                boxShadow: 0 4px 12px rgba(0,0,0,0.15);
+                zIndex: 2147483647;
+                transition: opacity 0.3s ease-in-out;
+                pointerEvents: none;
+                opacity: 0;
+            }
         `;
         document.head.appendChild(style);
     }
@@ -95,15 +112,10 @@
     }
 
     function genericElevation(text) {
-        // 提取高度數字 (尋找 「公尺」 或 「m」 前面的數字)
-        const elevRegex = /(-?\d+)\s*(?:公尺|m)/;
+        // 提取高度數字 (支援正負號、小數點，且單位為選擇性匹配)
+        const elevRegex = /(-?\d+(?:\.\d+)?)\s*(?:公尺|m)?/i;
         const elevMatch = text.match(elevRegex);
-        if (elevMatch) {
-            return parseFloat(elevMatch[1]);
-        }
-        // 嘗試抓取純數字 (如果沒有單位)
-        const pureNumMatch = text.match(/-?\d+(?:\.\d+)?/);
-        return pureNumMatch ? parseFloat(pureNumMatch[0]) : null;
+        return elevMatch ? parseFloat(elevMatch[1]) : null;
     }
 
     function lonlat(coordinatesText) {
@@ -301,7 +313,6 @@
         'maps.nlsc.gov.tw': {
             name: 'Taiwan Map Service',
             selector: ['.ol-mouse-position'],
-            ifinnerText: true,
             processCoordinates: lonlat
         },
         '3dmaps.nlsc.gov.tw': {
@@ -309,7 +320,6 @@
             onLoad: nlsc3DOnLoad,
             customExtractor: nlsc3DExtractor,
             processCoordinates: genericTWD97,
-            processElevation: genericElevation,
             height: true
         },
         'gis.ardswc.gov.tw': {
@@ -321,13 +331,11 @@
             name: 'Yushan National Park',
             ifframe: ['iframe', 0],
             selector: ['#statusbar'],
-            ifinnerText: true,
             processCoordinates: lonlat
         },
         '3dmap.ymsnp.gov.tw': {
             name: 'Yangmingshan National Park',
             selector: ['#coord'],
-            ifinnerText: true,
             processCoordinates: lonlat
         },
         'urban.planning.ntpc.gov.tw': {
@@ -368,14 +376,6 @@
                 // 高雄地籍圖資服務網
                 if (path.includes('landeasy')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(38) > div.mousePosition > span > div'];
                 return [];
-            })(),
-            ifinnerText: (function () {
-                const path = window.location.pathname;
-                // 高雄地圖網(舊版)
-                if (path.includes('kcmap2')) return false;
-                // 高雄地籍圖資服務網(舊版)
-                if (path.includes('landeasy/page.cfm')) return false;
-                return true;
             })(),
             processCoordinates: (function () {
                 const path = window.location.pathname;
@@ -426,7 +426,6 @@
             name: 'Hualien GIS Map',
             ifframe: ['iframe', 0],
             selector: ['#twd97'],
-            ifinnerText: true,
             copier: '#twd97Status',
             processCoordinates: genericTWD97
         },
@@ -434,7 +433,6 @@
             name: 'Keelung Urban Planning GIS',
             ifframe: ['frame', 2],
             selector: ['#coordShow'],
-            ifinnerText: true,
             processCoordinates: genericTWD97
         },
         'urban.kinmen.gov.tw': {
@@ -476,8 +474,6 @@
                 const idx = i < 0 ? elements.length + i : i;
                 coordText = elements[idx]?.textContent.trim();
             }
-        } else if (info.ifinnerText) {
-            coordText = elements[0].innerText.trim();
         } else {
             coordText = elements.length === 1
                 ? elements[0].textContent.trim()
@@ -505,8 +501,9 @@
 
         const parsed = config.processCoordinates(coordText);
         let elev = parsed?.elev;
-        if ((elev === undefined || elev === null) && elevText && config.processElevation) {
-            elev = config.processElevation(elevText);
+        if ((elev === undefined || elev === null) && elevText) {
+            const processor = config.processElevation || (typeof genericElevation !== 'undefined' ? genericElevation : null);
+            if (processor) elev = processor(elevText);
         }
 
         if (elev !== undefined && elev !== null) {
@@ -594,8 +591,9 @@
 
             // 處理高度解析
             let baseElev = result.elev;
-            if ((baseElev === undefined || baseElev === null) && elevText && config.processElevation) {
-                baseElev = config.processElevation(elevText);
+            if ((baseElev === undefined || baseElev === null) && elevText) {
+                const processor = config.processElevation || (typeof genericElevation !== 'undefined' ? genericElevation : null);
+                if (processor) baseElev = processor(elevText);
             }
 
             let finalElev = 0;
@@ -620,14 +618,30 @@
 
             // 使用標準 Clipboard API 寫入剪貼簿
             navigator.clipboard.writeText(output).then(() => {
-                alert(`網站：${config.name}\n結果：${output}\n${note}\n已複製到剪貼簿。`);
+                showToast("Copied!");
             }).catch(err => {
                 console.error('[CoordExtractor] 無法寫入剪貼簿:', err);
-                alert(`網站：${config.name}\n結果：${output}\n(請手動複製，因剪貼簿權限受限)`);
+                showToast("Copy Failed!");
             });
         } else {
             console.error(`[CoordExtractor] 座標解析失敗。擷取到的文字為:`, coordText);
         }
+    }
+    function showToast(message) {
+        let toast = document.getElementById('ce-toast-notification');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'ce-toast-notification';
+            document.body.appendChild(toast);
+        }
+        
+        toast.textContent = message;
+        toast.style.opacity = '1';
+        
+        if (window.ceToastTimeout) clearTimeout(window.ceToastTimeout);
+        window.ceToastTimeout = setTimeout(() => {
+            toast.style.opacity = '0';
+        }, 2000);
     }
 
     // 綁定鍵盤事件
