@@ -29,9 +29,9 @@ document.addEventListener('DOMContentLoaded', function () {
         const tIn = data.toInput || '';
         controls.toOffset.value = Array.isArray(tIn) ? tIn.join(',') : '';
 
-        if (data.prefix === 'none') controls.prefixNone.checked = true;
+        if (data.prefix === 'tpll') controls.prefixTpll.checked = true;
         else if (data.prefix === 'upll') controls.prefixUpll.checked = true;
-        else controls.prefixTpll.checked = true;
+        else controls.prefixNone.checked = true;
 
         controls.includeElev.checked = !!data.includeElev;
         controls.applyDistortion.checked = !!data.applyDistortion;
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 更新預覽文字
     function updatePreview() {
         const prefixEl = document.querySelector('input[name="prefix"]:checked');
-        const prefix = prefixEl ? prefixEl.value : 'slash';
+        const prefix = prefixEl ? prefixEl.value : 'none';
         const includeElev = controls.includeElev.checked;
         const applyDist = controls.applyDistortion.checked;
 
