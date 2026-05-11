@@ -10,7 +10,7 @@
 ### ✨ 功能
 *   **快捷擷取**：使用 `Alt` + `C` 即可將座標與高度複製到剪貼簿。
 *   **BTE 專用支援**：
-    *   支援 `/tpll` 與 `/upll` 格式。
+    *   支援 `/tpll` 與 [/upll](https://github.com/LonghiTW/upll/releases) 格式。
     *   支援 BTE X/Z 座標偏移設定。
     *   支援 BTE 投影的高度變形計算。
 
@@ -73,7 +73,7 @@
 ### ✨ Features
 *   **One-Click Extraction**: Press `Alt` + `C` to copy coordinates and elevation.
 *   **BTE Specialized Support**:
-    *   Compatible with `/tpll` and `/upll` command formats.
+    *   Compatible with `/tpll` and [/upll](https://github.com/LonghiTW/upll/releases) command formats.
     *   Custom coordinate offsets (Lat/Lon or BTE X/Z).
     *   BTE projection height distortion calculation.
 
