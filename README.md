@@ -7,7 +7,7 @@
 
 **CoordExtractor** 是一款強大的瀏覽器擴充功能，旨在簡化從各種地圖服務（如 Google Maps、Google Earth 及台灣各縣市 GIS 系統）中擷取座標的過程，並支援 BTE (Build The Earth) 所需功能。
 
-### ✨ 核心功能
+### ✨ 功能
 *   **快捷擷取**：使用 `Alt` + `C` 即可將座標與高度複製到剪貼簿。
 *   **BTE 專用支援**：
     *   支援 `/tpll` 與 `/upll` 格式。
@@ -70,7 +70,7 @@
 
 **CoordExtractor** is a high-performance browser extension designed to simplify coordinate extraction from various map services, with specialized support for the Build The Earth (BTE) project.
 
-### ✨ Key Features
+### ✨ Features
 *   **One-Click Extraction**: Press `Alt` + `C` to copy coordinates and elevation.
 *   **BTE Specialized Support**:
     *   Compatible with `/tpll` and `/upll` command formats.
