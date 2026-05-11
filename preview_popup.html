@@ -149,10 +149,10 @@
             </div>
             <div class="col-9">
                 <div class="btn-group btn-group-sm btn-group-equal" role="group">
-                    <input type="radio" class="btn-check" name="prefix" id="prefixSlash" value="slash" checked>
-                    <label class="btn btn-outline-primary" for="prefixSlash">/tpll</label>
-                    <input type="radio" class="btn-check" name="prefix" id="prefixTpll" value="tpll">
-                    <label class="btn btn-outline-primary" for="prefixTpll">tpll</label>
+                    <input type="radio" class="btn-check" name="prefix" id="prefixTpll" value="tpll" checked>
+                    <label class="btn btn-outline-primary" for="prefixTpll">/tpll</label>
+                    <input type="radio" class="btn-check" name="prefix" id="prefixUpll" value="upll">
+                    <label class="btn btn-outline-primary" for="prefixUpll">/upll</label>
                     <input type="radio" class="btn-check" name="prefix" id="prefixNone" value="none">
                     <label class="btn btn-outline-primary" for="prefixNone">None</label>
                 </div>
@@ -262,7 +262,7 @@
                 xInput: el('xInput'), zInput: el('zInput'),
                 fromOffset: el('fromOffset'), toOffset: el('toOffset'),
                 xOffset: el('xOffset'), zOffset: el('zOffset'),
-                prefixSlash: el('prefixSlash'), prefixTpll: el('prefixTpll'), prefixNone: el('prefixNone'),
+                prefixTpll: el('prefixTpll'), prefixUpll: el('prefixUpll'), prefixNone: el('prefixNone'),
                 includeElev: el('includeElev'), applyDistortion: el('applyDistortion'),
                 distortionWrap: el('distortionWrap')
             };
@@ -276,8 +276,8 @@
                 controls.toOffset.value = Array.isArray(data.toInput) ? data.toInput.join(',') : (data.toInput || '');
 
                 if (data.prefix === 'none') controls.prefixNone.checked = true;
-                else if (data.prefix === 'tpll') controls.prefixTpll.checked = true;
-                else controls.prefixSlash.checked = true;
+                else if (data.prefix === 'upll') controls.prefixUpll.checked = true;
+                else controls.prefixTpll.checked = true;
 
                 controls.includeElev.checked = !!data.includeElev;
                 controls.applyDistortion.checked = !!data.applyDistortion;
@@ -306,15 +306,15 @@
 
             function updatePreview() {
                 const prefixEl = document.querySelector('input[name="prefix"]:checked');
-                const prefix = prefixEl ? prefixEl.value : 'slash';
+                const prefix = prefixEl ? prefixEl.value : 'tpll';
                 const includeElev = controls.includeElev.checked;
                 const applyDist = controls.applyDistortion.checked;
 
                 let lat = 25.033668, lon = 121.564816, elev = 516, ground = 8;
 
                 let res = "";
-                if (prefix === 'slash') res += "/tpll ";
-                else if (prefix === 'tpll') res += "tpll ";
+                if (prefix === 'tpll') res += "/tpll ";
+                else if (prefix === 'upll') res += "/upll ";
 
                 res += `${lat} ${lon}`;
 
