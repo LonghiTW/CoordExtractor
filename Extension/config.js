@@ -4,8 +4,7 @@ const sites_config = {
         onLoad: googleEarthOnLoad,
         customExtractor: googleEarthExtractor,
         processCoordinates: googleEarthCoordinates,
-        height: true,
-        processElevation: genericElevation
+        height: true
     },
     'www.google.com': {
         name: 'Google Maps',
@@ -17,8 +16,7 @@ const sites_config = {
         selector: ['span.alwaysLtr_CVy2G'],
         copier: '.secTextLink[data-tag="secTextLink"]',
         processCoordinates: latlon,
-        height: 'div.alwaysLtr_CVy2G',
-        processElevation: genericElevation
+        height: 'div.alwaysLtr_CVy2G'
     },
     'yandex.com': {
         name: 'Yandex Maps',
@@ -29,7 +27,6 @@ const sites_config = {
     'maps.nlsc.gov.tw': {
         name: 'Taiwan Map Service',
         selector: ['.ol-mouse-position'],
-        ifinnerText: true,
         processCoordinates: lonlat,
     },
     '3dmaps.nlsc.gov.tw': {
@@ -37,7 +34,6 @@ const sites_config = {
         ifframe: ['frame', 0],
         customExtractor: nlsc3DExtractor,
         processCoordinates: genericTWD97,
-        processElevation: genericElevation,
         height: true
     },
     'gis.ardswc.gov.tw': {
@@ -49,13 +45,11 @@ const sites_config = {
         name: 'Yushan National Park',
         ifframe: ['iframe', 0],
         selector: ['#statusbar'],
-        ifinnerText: true,
         processCoordinates: lonlat,
     },
     '3dmap.ymsnp.gov.tw': {
         name: 'Yangmingshan National Park',
         selector: ['#coord'],
-        ifinnerText: true,
         processCoordinates: lonlat,
     },
     'urban.planning.ntpc.gov.tw': {
@@ -96,14 +90,6 @@ const sites_config = {
             // 高雄地籍圖資服務網
             if (path.includes('landeasy')) return ['#app_div > div > div.v-layout.fill-height > main > div > div:nth-child(38) > div.mousePosition > span > div'];
             return [];
-        })(),
-        ifinnerText: (function () {
-            const path = window.location.pathname;
-            // 高雄地圖網(舊版)
-            if (path.includes('kcmap2')) return false;
-            // 高雄地籍圖資服務網(舊版)
-            if (path.includes('landeasy/page.cfm')) return false;
-            return true;
         })(),
         processCoordinates: (function () {
             const path = window.location.pathname;
@@ -154,7 +140,6 @@ const sites_config = {
         name: 'Hualien GIS Map',
         ifframe: ['iframe', 0],
         selector: ['#twd97'],
-        ifinnerText: true,
         copier: '#twd97Status',
         processCoordinates: genericTWD97,
     },
@@ -162,7 +147,6 @@ const sites_config = {
         name: 'Keelung Urban Planning GIS',
         ifframe: ['frame', 2],
         selector: ['#coordShow'],
-        ifinnerText: true,
         processCoordinates: genericTWD97,
     },
     'urban.kinmen.gov.tw': {
