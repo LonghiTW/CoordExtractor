@@ -3,6 +3,12 @@
     "name": "CoordExtractor",
     "version": "1.6",
     "description": "A coordinate extraction tool for map services.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "coordextractor@extension.local",
+            "strict_min_version": "109.0"
+        }
+    },
     "permissions": [
         "activeTab",
         "scripting",
@@ -75,6 +81,7 @@
                 "*://upgis.klcg.gov.tw/*",
                 "*://urban.kinmen.gov.tw/kmgisweb/*"
             ],
+            "run_at": "document_start",
             "css": ["content.css"],
             "js": [
                 "utils.js",
@@ -96,12 +103,6 @@
                 "default": "Alt+G"
             },
             "description": "Set captured elevation as Ground level"
-        }
-    },
-    "browser_specific_settings": {
-        "gecko": {
-            "id": "coordextractor@yourdomain.com",
-            "strict_min_version": "109.0"
         }
     }
 }
