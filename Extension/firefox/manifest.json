@@ -1,23 +1,68 @@
 {
-    "manifest_version": 3,
-    "name": "CoordExtractor",
-    "version": "1.6",
-    "description": "A coordinate extraction tool for map services.",
-    "browser_specific_settings": {
-        "gecko": {
-            "id": "coordextractor@extension.local",
-            "strict_min_version": "109.0"
-        }
-    },
-    "permissions": [
-        "activeTab",
-        "scripting",
-        "storage",
-        "clipboardRead",
-        "clipboardWrite"
-    ],
-    "host_permissions": [
-        "*://*.google.com/*",
+  "manifest_version": 3,
+  "name": "CoordExtractor",
+  "version": "1.6.1",
+  "description": "A coordinate extraction tool for map services.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "coordextractor@extension.local",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      },
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "clipboardRead",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "*://*.google.com/*",
+    "*://*.bing.com/*",
+    "*://yandex.com/*",
+    "*://maps.nlsc.gov.tw/*",
+    "*://3dmaps.nlsc.gov.tw/*",
+    "*://gis.ardswc.gov.tw/*",
+    "*://ysnp.3dgis.tw/*",
+    "*://3dmap.ymsnp.gov.tw/*",
+    "*://urban.planning.ntpc.gov.tw/*",
+    "*://urplanning.tycg.gov.tw/*",
+    "*://tymap.tycg.gov.tw/*",
+    "*://gismap.taichung.gov.tw/*",
+    "*://gisdawh.kcg.gov.tw/*",
+    "*://urbangis.kcg.gov.tw/*",
+    "*://urbangis.hccg.gov.tw/*",
+    "*://3dgis.hccg.gov.tw/*",
+    "*://urbangis.chcg.gov.tw/*",
+    "*://map.yunlin.gov.tw/*",
+    "*://nsp.tcd.gov.tw/*",
+    "*://map.taitung.gov.tw/*",
+    "*://map.hl.gov.tw/*",
+    "*://upgis.klcg.gov.tw/*",
+    "*://urban.kinmen.gov.tw/kmgisweb/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "chip_extraction.png"
+  },
+  "icons": {
+    "128": "chip_extraction.png"
+  },
+  "background": {
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.google.com/maps/*",
+        "*://earth.google.com/web/*",
         "*://*.bing.com/*",
         "*://yandex.com/*",
         "*://maps.nlsc.gov.tw/*",
@@ -40,69 +85,31 @@
         "*://map.hl.gov.tw/*",
         "*://upgis.klcg.gov.tw/*",
         "*://urban.kinmen.gov.tw/kmgisweb/*"
-    ],
-    "action": {
-        "default_popup": "popup.html",
-        "default_icon": "chip_extraction.png"
-    },
-    "icons": {
-        "16": "chip_extraction.png",
-        "48": "chip_extraction.png",
-        "128": "chip_extraction.png"
-    },
-    "background": {
-        "scripts": ["background.js"]
-    },
-    "content_scripts": [
-        {
-            "matches": [
-                "*://*.google.com/maps/*",
-                "*://earth.google.com/web/*",
-                "*://*.bing.com/*",
-                "*://yandex.com/*",
-                "*://maps.nlsc.gov.tw/*",
-                "*://3dmaps.nlsc.gov.tw/*",
-                "*://gis.ardswc.gov.tw/*",
-                "*://ysnp.3dgis.tw/*",
-                "*://3dmap.ymsnp.gov.tw/*",
-                "*://urban.planning.ntpc.gov.tw/*",
-                "*://urplanning.tycg.gov.tw/*",
-                "*://tymap.tycg.gov.tw/*",
-                "*://gismap.taichung.gov.tw/*",
-                "*://gisdawh.kcg.gov.tw/*",
-                "*://urbangis.kcg.gov.tw/*",
-                "*://urbangis.hccg.gov.tw/*",
-                "*://3dgis.hccg.gov.tw/*",
-                "*://urbangis.chcg.gov.tw/*",
-                "*://map.yunlin.gov.tw/*",
-                "*://nsp.tcd.gov.tw/*",
-                "*://map.taitung.gov.tw/*",
-                "*://map.hl.gov.tw/*",
-                "*://upgis.klcg.gov.tw/*",
-                "*://urban.kinmen.gov.tw/kmgisweb/*"
-            ],
-            "run_at": "document_start",
-            "css": ["content.css"],
-            "js": [
-                "utils.js",
-                "config.js",
-                "bte_projection.js",
-                "content.js"
-            ]
-        }
-    ],
-    "commands": {
-        "copy-coordinates": {
-            "suggested_key": {
-                "default": "Alt+C"
-            },
-            "description": "Copy coordinates"
-        },
-        "set-ground-elevation": {
-            "suggested_key": {
-                "default": "Alt+G"
-            },
-            "description": "Set captured elevation as Ground level"
-        }
+      ],
+      "run_at": "document_start",
+      "css": [
+        "content.css"
+      ],
+      "js": [
+        "utils.js",
+        "config.js",
+        "bte_projection.js",
+        "content.js"
+      ]
     }
+  ],
+  "commands": {
+    "copy-coordinates": {
+      "suggested_key": {
+        "default": "Alt+C"
+      },
+      "description": "Copy coordinates"
+    },
+    "set-ground-elevation": {
+      "suggested_key": {
+        "default": "Alt+G"
+      },
+      "description": "Set captured elevation as Ground level"
+    }
+  }
 }
