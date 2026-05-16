@@ -326,24 +326,32 @@ function googleEarthCoordinates(text) {
         };
     }
 
-    const decimalRegex = /([-+]?\d+\.\d+)°?\s*[NS]?[^\d\n]+([-+]?\d+\.\d+)°?\s*[EW]?/i;
+    const decimalRegex = /([-+]?\d+\.\d+)°?\s*([NS])\s+([-+]?\d+\.\d+)°?\s*([EW])/i;
     const decimalMatch = clean.match(decimalRegex);
+    
     if (decimalMatch) {
+        const latVal = parseFloat(decimalMatch[1]);
+        const latDir = decimalMatch[2].toUpperCase();
+        const lonVal = parseFloat(decimalMatch[3]);
+        const lonDir = decimalMatch[4].toUpperCase();
+
         return {
-            lat: parseFloat(decimalMatch[1]),
-            lon: parseFloat(decimalMatch[2])
+            lat: (latDir === 'S') ? -Math.abs(latVal) : Math.abs(latVal),
+            lon: (lonDir === 'W') ? -Math.abs(lonVal) : Math.abs(lonVal)
         };
     }
 
-    const fallbackRegex = /(-?\d+(?:\.\d+)?).*?(-?\d+(?:\.\d+)?)/;
+    const fallbackRegex = /([-+]?\d+(?:\.\d+)?)[^\d]+([-+]?\d+(?:\.\d+)?)/;
     const fallbackMatch = clean.match(fallbackRegex);
     if (fallbackMatch) {
-        const latSign = clean.includes('S') ? -1 : 1;
-        const lonSign = clean.includes('W') ? -1 : 1;
-        return {
-            lat: parseFloat(fallbackMatch[1]) * latSign,
-            lon: parseFloat(fallbackMatch[2]) * lonSign
-        };
+        let lat = parseFloat(fallbackMatch[1]);
+        let lon = parseFloat(fallbackMatch[2]);
+        const upperClean = clean.toUpperCase();
+        
+        if (upperClean.includes('S') && lat > 0) lat *= -1;
+        if (upperClean.includes('W') && lon > 0) lon *= -1;
+        
+        return { lat, lon };
     }
 
     return null;
